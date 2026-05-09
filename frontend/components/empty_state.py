@@ -4,9 +4,9 @@ from __future__ import annotations
 import streamlit as st
 
 MODES = [
-    ("01", "By citation", "Pinpoint a specific section when you already know the cite.", "CA Veh Code 22107"),
-    ("02", "By factor", "Surface statutes that touch a contributing factor.", "failure to yield"),
-    ("03", "By description", "Describe the accident in plain English; we route the search.", "rear-ended at a stop sign"),
+    ("1", "Search by citation", "Jump straight to a section when you already know the cite.", "CA Veh Code 22107"),
+    ("2", "Search by factor", "Pull every statute that touches a contributing factor.", "failure to yield"),
+    ("3", "Describe the accident", "Plain English works — we route to the right statutes.", "rear-ended at a stop sign"),
 ]
 
 

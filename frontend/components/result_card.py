@@ -41,7 +41,7 @@ def render(statute: dict) -> None:
     factors_html = _factor_tags(statute)
     source_url = statute.get("source_url")
     source_html = (
-        f'<div class="tt-card-source"><a href="{_html.escape(source_url)}" target="_blank" rel="noreferrer">View source ↗</a></div>'
+        f'<div class="tt-card-source"><a href="{_html.escape(source_url)}" target="_blank" rel="noreferrer">View source <span aria-hidden="true">→</span></a></div>'
         if source_url else ""
     )
     explanation = (statute.get("explanation") or "").strip()

@@ -40,7 +40,7 @@ def render() -> tuple[str, str | None, bool]:
     if "_chip_pending" in st.session_state:
         st.session_state["query"] = st.session_state.pop("_chip_pending")
 
-    st.markdown('<div class="tt-hero-label">Search the record</div>', unsafe_allow_html=True)
+    st.markdown('<div class="tt-hero-label">Search statutes</div>', unsafe_allow_html=True)
 
     cols = st.columns([5, 2, 1.4])
     with cols[0]:
@@ -48,7 +48,7 @@ def render() -> tuple[str, str | None, bool]:
             "Search",
             key="query",
             label_visibility="collapsed",
-            placeholder="Citation, factor, or describe the accident…",
+            placeholder="Search by citation, factor, or describe the accident…",
         )
     with cols[1]:
         juris_options = [("", "Any jurisdiction")] + _jurisdictions()
@@ -69,7 +69,7 @@ def render() -> tuple[str, str | None, bool]:
         f'<a class="tt-chip" href="?q={quote(eg)}"><span class="tt-chip-eg-mark">{num}</span>{_html.escape(eg)}</a>'
         for num, eg in EXAMPLE_QUERIES
     )
-    st.markdown('<div class="tt-chip-label">Try one</div>', unsafe_allow_html=True)
+    st.markdown('<div class="tt-chip-label">Try a sample query</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="tt-chip-row">{chips_html}</div>', unsafe_allow_html=True)
 
     return query, jurisdiction, use_ai

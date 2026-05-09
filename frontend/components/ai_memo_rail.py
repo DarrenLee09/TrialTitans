@@ -10,6 +10,43 @@ import streamlit as st
 from ai import answer_generator
 
 _SECTION_RE = re.compile(r"§\s*([0-9.\-]+)")
+_BOLD_RE = re.compile(r"\*\*(.+?)\*\*")
+
+
+def _memo_to_html(text: str) -> str:
+    """Convert the memo's lightweight markdown (bold + bullets) to HTML blocks."""
+    blocks: list[str] = []
+    para: list[str] = []
+    bullets: list[str] = []
+
+    def flush_para() -> None:
+        if para:
+            blocks.append("<p>" + "<br>".join(para) + "</p>")
+            para.clear()
+
+    def flush_bullets() -> None:
+        if bullets:
+            items = "".join(f"<li>{b}</li>" for b in bullets)
+            blocks.append(f"<ul class=\"tt-memo-list\">{items}</ul>")
+            bullets.clear()
+
+    for raw in text.splitlines():
+        line = raw.rstrip()
+        if not line.strip():
+            flush_para()
+            flush_bullets()
+            continue
+        if line.lstrip().startswith(("- ", "* ")):
+            flush_para()
+            bullets.append(line.lstrip()[2:].strip())
+        else:
+            flush_bullets()
+            para.append(line)
+    flush_para()
+    flush_bullets()
+
+    html_out = "".join(blocks)
+    return _BOLD_RE.sub(r"<strong>\1</strong>", html_out)
 
 
 def _linkify_citations(memo: str, results: list[dict]) -> str:
@@ -36,7 +73,7 @@ def render(query: str, results: list[dict], jurisdiction: str | None) -> None:
     if not os.environ.get("ANTHROPIC_API_KEY"):
         fallback_html = (
             '<div class="tt-memo">'
-            '<div class="tt-memo-eyebrow">Editorial &middot; Memo</div>'
+            '<div class="tt-memo-eyebrow">AI memo</div>'
             '<h2>Memorandum</h2>'
             '<div class="tt-memo-byline">A research note for the attorney of record.</div>'
             '<div class="tt-memo-fallback">Set <code>ANTHROPIC_API_KEY</code> in the environment to enable the AI memo.</div>'
@@ -54,15 +91,13 @@ def render(query: str, results: list[dict], jurisdiction: str | None) -> None:
     else:
         memo_text = st.session_state.get("last_memo", "")
 
-    body_html = _linkify_citations(memo_text, results).replace("\n\n", "</p><p>").replace("\n", "<br>")
-    if not body_html.startswith("<p>"):
-        body_html = f"<p>{body_html}</p>"
+    body_html = _memo_to_html(_linkify_citations(memo_text, results))
 
     juris_label = (jurisdiction or "Any jurisdiction").upper()
     safe_query = _html.escape(query)
     memo_html = (
         '<div class="tt-memo">'
-        '<div class="tt-memo-eyebrow">Editorial &middot; Memo</div>'
+        '<div class="tt-memo-eyebrow">AI memo</div>'
         '<h2>Memorandum</h2>'
         f'<div class="tt-memo-byline">Re: <em>{safe_query}</em> &middot; {juris_label}</div>'
         f'<div class="tt-memo-body">{body_html}</div>'
