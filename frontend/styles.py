@@ -958,6 +958,104 @@ hr { border-color: var(--line) !important; }
   background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--line-strong); background-clip: padding-box; }
+
+/* ---------------- Per-card AI summary + source link ---------------- */
+.tt-card-source-link {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-2);
+  text-decoration: none;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  padding: 4px 11px;
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  transition: all 160ms ease;
+}
+.tt-card-source-link:hover {
+  color: var(--brand-2);
+  border-color: var(--brand-border);
+  background: var(--brand-soft);
+}
+
+.tt-card-summary {
+  margin: 14px 0 4px;
+  padding: 16px 20px;
+  background: var(--brand-softer);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--radius-sm);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+}
+.tt-card-summary-eyebrow {
+  font-family: 'Geist Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  font-size: 10.5px;
+  color: var(--brand-2);
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: flex; align-items: center; gap: 6px;
+}
+.tt-card-summary-eyebrow::before { content: "✦"; color: var(--brand-2); }
+.tt-card-summary-body {
+  font-family: 'Geist', sans-serif;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--ink);
+}
+.tt-card-summary-body p { margin: 0 0 10px; }
+.tt-card-summary-body p:last-child { margin-bottom: 0; }
+.tt-card-summary-body .tt-cite-pill {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--brand-2);
+  background: var(--glass-2);
+  border: 1px solid var(--brand-border);
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin: 0 1px;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+/* "Read full statute" expander styled to match the dark glass theme */
+section.main [data-testid="stExpander"] summary {
+  font-family: 'Geist', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--ink-2) !important;
+  padding: 10px 14px !important;
+  background: var(--glass) !important;
+  border: 1px solid var(--line-2) !important;
+  border-radius: var(--radius-sm) !important;
+  backdrop-filter: var(--blur) !important;
+  -webkit-backdrop-filter: var(--blur) !important;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+section.main [data-testid="stExpander"] summary:hover {
+  background: var(--glass-2) !important;
+  border-color: var(--line-strong) !important;
+  color: var(--ink) !important;
+}
+section.main [data-testid="stExpander"] details { background: transparent !important; border: none !important; }
+section.main [data-testid="stExpander"] [data-testid="stExpanderDetails"] {
+  background: var(--glass) !important;
+  border: 1px solid var(--line-2) !important;
+  border-top: none !important;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm) !important;
+  padding: 18px 22px !important;
+  font-family: 'Geist', sans-serif !important;
+  font-size: 14px !important;
+  color: var(--ink) !important;
+  line-height: 1.65 !important;
+  margin-top: -1px !important;
+  backdrop-filter: var(--blur) !important;
+}
 </style>
 """
 
