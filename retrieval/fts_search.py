@@ -32,6 +32,7 @@ def search(query: str, jurisdiction: str | None = None, limit: int = 20) -> list
                s.section_number AS section,
                s.title,
                s.citation,
+               s.source_url,
                snippet(statute_fts, 2, '<b>', '</b>', ' … ', 12) AS snippet,
                bm25(statute_fts) AS rank
         FROM statute_fts
