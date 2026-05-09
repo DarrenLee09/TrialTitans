@@ -1,7 +1,25 @@
 """SQLite FTS5 full-text search over statute bodies."""
 from __future__ import annotations
 
+import re
+
 from db.seed import connect
+
+
+def _sanitize_fts_query(query: str) -> str:
+    """Convert free-form text to a safe FTS5 MATCH expression.
+
+    FTS5 treats characters like `-`, `:`, `*`, `(`, `)`, `"` as operators or
+    column refs. For natural-language queries we strip them, then quote each
+    remaining word so any incidental punctuation can't break the parser.
+    Empty input returns a sentinel that matches nothing.
+    """
+    cleaned = re.sub(r"[^A-Za-z0-9\s]", " ", query)
+    tokens = [t for t in cleaned.split() if t]
+    if not tokens:
+        return '""'
+    # Phrase-quote each token; OR-join allows partial matches.
+    return " OR ".join(f'"{t}"' for t in tokens)
 
 
 def search(query: str, jurisdiction: str | None = None, limit: int = 20) -> list[dict]:
@@ -20,7 +38,7 @@ def search(query: str, jurisdiction: str | None = None, limit: int = 20) -> list
         JOIN jurisdictions j ON j.id = s.jurisdiction_id
         WHERE statute_fts MATCH ?
     """
-    args: list = [query]
+    args: list = [_sanitize_fts_query(query)]
     if jurisdiction:
         sql += " AND j.code = ?"
         args.append(jurisdiction)

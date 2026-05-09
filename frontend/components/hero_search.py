@@ -10,8 +10,9 @@ from db.seed import connect
 
 EXAMPLE_QUERIES = [
     ("01", "CA Veh Code 22107"),
-    ("02", "rear-ended at a stop sign"),
-    ("03", "failure to yield at intersection"),
+    ("02", "NY VAT 1192"),
+    ("03", "Fla. Stat. 316.193"),
+    ("04", "rear-ended at a stop sign"),
 ]
 
 

@@ -257,6 +257,31 @@ section.main [data-testid="stToggle"] label {
 .tt-citation { color: var(--accent); font-weight: 600; }
 .tt-citation::before { content: "["; opacity: 0.6; }
 .tt-citation::after { content: "]"; opacity: 0.6; }
+
+.tt-live-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: rgba(34,139,82,0.12);
+  border: 1px solid rgba(34,139,82,0.5);
+  border-radius: 999px;
+  padding: 2px 9px 2px 7px;
+  font-variant-numeric: lining-nums;
+}
+.tt-live-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #228b52;
+  box-shadow: 0 0 0 0 rgba(34,139,82,0.7);
+  animation: tt-live-pulse 1.6s ease-out infinite;
+}
+@keyframes tt-live-pulse {
+  0%   { box-shadow: 0 0 0 0   rgba(34,139,82,0.55); }
+  70%  { box-shadow: 0 0 0 6px rgba(34,139,82, 0); }
+  100% { box-shadow: 0 0 0 0   rgba(34,139,82, 0); }
+}
 .tt-card-meta .tt-meta-spacer {
   flex: 1; border-bottom: 1px dotted var(--rule); transform: translateY(-2px);
 }

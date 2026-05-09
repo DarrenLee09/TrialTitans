@@ -3,9 +3,9 @@ from __future__ import annotations
 
 from typing import Literal, TypedDict
 
-from retrieval import citation_parser, exact_lookup, factor_search, fts_search, vector_search
+from retrieval import citation_parser, exact_lookup, factor_search, fts_search, live_fetch, vector_search
 
-QueryKind = Literal["citation", "factor", "fts", "semantic"]
+QueryKind = Literal["citation", "live", "factor", "fts", "semantic"]
 
 
 class RoutedResult(TypedDict):
@@ -25,7 +25,12 @@ def route(query: str, jurisdiction: str | None = None, limit: int = 20) -> Route
     citation = citation_parser.parse(query)
     if citation:
         hit = exact_lookup.lookup(citation)
-        return {"kind": "citation", "results": [hit] if hit else []}
+        if hit:
+            return {"kind": "citation", "results": [hit]}
+        live = live_fetch.fetch(citation.jurisdiction, citation.code_name, citation.section)
+        if live:
+            return {"kind": "live", "results": [live]}
+        return {"kind": "citation", "results": []}
 
     factor = _factor_slug_for(query)
     if factor:

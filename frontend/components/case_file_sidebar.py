@@ -7,6 +7,8 @@ import streamlit as st
 
 
 def _citation(s: dict) -> str:
+    if s.get("citation"):
+        return s["citation"]
     return f"{s.get('jurisdiction', '?')} {s.get('code_name', '?')} § {s.get('section', '?')}"
 
 
