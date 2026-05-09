@@ -78,6 +78,12 @@ NY_NAME_TO_FINDLAW: dict[str, tuple[str, str]] = {
     "Tax Law": ("ny/tax-law", "tax"),
 }
 
+# GA and OH FindLaw coverage uses a different URL shape — title-prefixed
+# slugs with "ga-code-sect" / "oh-rev-code-sect" markers. Fetcher just needs
+# the title slug; the section number is appended dash-delimited.
+GA_TITLE_SLUG = "ga/title-40-motor-vehicles-and-traffic"
+OH_TITLE_SLUG = "oh/title-xlv-motor-vehicles-aeronautics-watercraft"
+
 
 def _save_to_db(record: dict) -> None:
     """Cache a live-fetched record so future queries skip the network hop."""
@@ -213,6 +219,53 @@ def _fetch_fl(section: str) -> Optional[dict]:
     return record
 
 
+def _fetch_findlaw_simple(state_label: str, jurisdiction_code: str,
+                          title_slug: str, sect_marker: str,
+                          code_name: str, section: str) -> Optional[dict]:
+    """Generic FindLaw fetcher for states whose URL is `<title-slug>/<marker>-<section>/`."""
+    sec_slug = section.lower().replace(".", "-")
+    url = f"https://codes.findlaw.com/{title_slug}/{sect_marker}-{sec_slug}/"
+    try:
+        r = httpx.get(url, headers=HEADERS, timeout=TIMEOUT_S, follow_redirects=True)
+    except httpx.HTTPError:
+        return None
+    if r.status_code != 200 or "404 Error" in r.text[:5000]:
+        return None
+    soup = BeautifulSoup(r.text, "html.parser")
+    body_node = soup.select_one(".codes-content")
+    if body_node is None:
+        return None
+    for noise in body_node.select("script, style, nav, aside, .ads"):
+        noise.decompose()
+    text = body_node.get_text("\n", strip=True)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    if len(text) < 60:
+        return None
+    title: Optional[str] = None
+    h1 = soup.find("h1")
+    if h1:
+        m = re.search(r"§\s*[\w\d\.\-]+\.?\s*(.+)$", h1.get_text(" ", strip=True))
+        if m:
+            title = m.group(1).strip().rstrip(".")
+            if len(title) > 200:
+                title = title[:200].rstrip() + "…"
+    record = _result_dict(jurisdiction_code, code_name, section, text, str(r.url), title)
+    _save_to_db(record)
+    return record
+
+
+def _fetch_ga(code_name: str, section: str) -> Optional[dict]:
+    return _fetch_findlaw_simple(
+        "Georgia", "GA", GA_TITLE_SLUG, "ga-code-sect", code_name, section,
+    )
+
+
+def _fetch_oh(code_name: str, section: str) -> Optional[dict]:
+    return _fetch_findlaw_simple(
+        "Ohio", "OH", OH_TITLE_SLUG, "oh-rev-code-sect", code_name, section,
+    )
+
+
 def fetch(jurisdiction: str, code_name: str, section: str) -> Optional[dict]:
     """Try every supported source. Return a result row or None on miss."""
     if jurisdiction == "CA":
@@ -221,4 +274,8 @@ def fetch(jurisdiction: str, code_name: str, section: str) -> Optional[dict]:
         return _fetch_ny(code_name, section)
     if jurisdiction == "FL":
         return _fetch_fl(section)
+    if jurisdiction == "GA":
+        return _fetch_ga(code_name, section)
+    if jurisdiction == "OH":
+        return _fetch_oh(code_name, section)
     return None

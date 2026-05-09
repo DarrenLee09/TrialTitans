@@ -14,9 +14,26 @@ class RoutedResult(TypedDict):
 
 
 def _factor_slug_for(query: str) -> str | None:
-    q = query.lower()
+    """Match a free-text query to a factor by overlapping word tokens.
+
+    Substring matching ("dui" in "dui_dwi") only worked one direction and
+    missed short queries. Token overlap handles both: query "DUI" → factor
+    "DUI/DWI" matches via the shared "dui" token.
+    """
+    import re
+    STOP = {"a", "an", "the", "of", "and", "or", "to", "for", "in", "on",
+            "with", "from", "at", "by"}
+    q_tokens = {t for t in re.findall(r"[a-z0-9]+", query.lower())} - STOP
+    if not q_tokens:
+        return None
+    # Short query (e.g. "DUI") matches on a single shared token; longer
+    # natural-language phrases require ≥2 overlapping tokens so we don't
+    # latch onto incidental words ("stop sign" matching "Failure to Yield
+    # at a Yield Sign" via just "sign").
+    required = 1 if len(q_tokens) <= 2 else 2
     for f in factor_search.list_factors():
-        if f["code"].lower() in q or f["label"].lower() in q:
+        label_tokens = {t for t in re.findall(r"[a-z0-9]+", f["label"].lower())} - STOP
+        if len(q_tokens & label_tokens) >= required:
             return f["code"]
     return None
 

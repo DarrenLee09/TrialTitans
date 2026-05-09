@@ -49,7 +49,7 @@ def render() -> tuple[str, str | None, bool]:
             "Search",
             key="query",
             label_visibility="collapsed",
-            placeholder="Citation, factor, or describe the accident…",
+            placeholder="Ask a question, paste a citation, or describe the accident…",
         )
     with cols[1]:
         juris_options = [("", "Any jurisdiction")] + _jurisdictions()
@@ -62,7 +62,7 @@ def render() -> tuple[str, str | None, bool]:
     with cols[2]:
         use_ai = st.toggle(
             "AI memo",
-            value=st.session_state.get("use_ai", False),
+            value=st.session_state.get("use_ai", True),
             key="use_ai",
         )
 

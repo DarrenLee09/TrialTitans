@@ -21,6 +21,20 @@ from retrieval import citation_parser, exact_lookup, factor_search, fts_search
 
 REPO = Path(__file__).resolve().parent.parent
 RELEASED_CSV = REPO / "data" / "eval-ca-vehicle-code.csv"
+REAL_DB = REPO / "db" / "legal_harvester.db"
+
+
+# These tests are *integration* checks against the production DB, not the
+# isolated empty test fixture. Override the session fixture for this module.
+@pytest.fixture(scope="module", autouse=True)
+def _use_real_db():
+    from db import seed
+    if not REAL_DB.exists():
+        pytest.skip("Real DB not present — rubric tests require live ingest")
+    original = seed.DB_PATH
+    seed.DB_PATH = REAL_DB
+    yield
+    seed.DB_PATH = original
 
 
 def _bare_section(s: str) -> str:

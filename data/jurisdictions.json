@@ -18,18 +18,6 @@
     "base_url": "https://www.nysenate.gov/legislation/laws/VAT"
   },
   {
-    "code": "TX",
-    "name": "Texas",
-    "statute_title": "Texas Transportation Code",
-    "base_url": "https://statutes.capitol.texas.gov/Docs/TN/htm/TN.545.htm"
-  },
-  {
-    "code": "IL",
-    "name": "Illinois",
-    "statute_title": "Illinois Vehicle Code (625 ILCS 5)",
-    "base_url": "https://law.justia.com/codes/illinois/chapter-625/"
-  },
-  {
     "code": "GA",
     "name": "Georgia",
     "statute_title": "Georgia Code Title 40 — Motor Vehicles and Traffic",

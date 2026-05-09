@@ -7,8 +7,9 @@ from dataclasses import dataclass
 JURISDICTION_ALIASES = {
     "ca":  "CA", "cal": "CA", "calif": "CA", "california": "CA",
     "ny":  "NY", "n y": "NY", "new york": "NY",
-    "tx":  "TX", "texas": "TX",
     "fl":  "FL", "fla": "FL", "florida": "FL",
+    "ga":  "GA", "georgia": "GA",
+    "oh":  "OH", "ohio": "OH",
 }
 
 # Maps a normalized lowercase code phrase → canonical short code name.
@@ -95,6 +96,16 @@ CODE_ALIASES = {
     "stat": "Fla. Stat.", "stat.": "Fla. Stat.",
     "fla stat": "Fla. Stat.", "fla. stat.": "Fla. Stat.", "fla stat.": "Fla. Stat.",
     "florida statutes": "Fla. Stat.",
+
+    # ---------- Georgia ----------
+    "code": "Code Ann.", "code ann": "Code Ann.", "code ann.": "Code Ann.",
+    "ga code": "Code Ann.", "ga code ann": "Code Ann.", "ga code ann.": "Code Ann.",
+
+    # ---------- Ohio ----------
+    "rev": "Rev. Code", "rev.": "Rev. Code",
+    "rev code": "Rev. Code", "rev. code": "Rev. Code",
+    "ohio rev code": "Rev. Code", "ohio rev. code": "Rev. Code",
+    "revised code": "Rev. Code", "revised": "Rev. Code",
 }
 
 
