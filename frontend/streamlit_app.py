@@ -59,23 +59,23 @@ def _run() -> None:
 
     st.session_state["last_results"] = results
 
-    st.markdown(
-        f'<div class="tt-route-caption">'
-        f'<span>route · <span class="tt-route-kind">{routed["kind"]}</span></span>'
+    route_html = (
+        '<div class="tt-route-caption">'
+        f'<span>route &middot; <span class="tt-route-kind">{routed["kind"]}</span></span>'
         f'<span class="tt-route-count">{len(results):02d} result(s)</span>'
-        f'</div>',
-        unsafe_allow_html=True,
+        '</div>'
     )
+    st.markdown(route_html, unsafe_allow_html=True)
 
     if not results:
-        st.markdown(
+        no_results_html = (
             '<div class="tt-no-results">'
             '<h3>Nothing on the record.</h3>'
-            '<p>Try a different phrasing — a citation like <em>CA Veh Code 22107</em>, '
+            '<p>Try a different phrasing &mdash; a citation like <em>CA Veh Code 22107</em>, '
             'a factor like <em>failure to yield</em>, or describe the accident in plain English.</p>'
-            '</div>',
-            unsafe_allow_html=True,
+            '</div>'
         )
+        st.markdown(no_results_html, unsafe_allow_html=True)
         st.stop()
 
     if use_ai:

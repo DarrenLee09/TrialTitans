@@ -1,6 +1,7 @@
 """Right rail: AI-generated attorney memo with editorial drop-cap."""
 from __future__ import annotations
 
+import html as _html
 import os
 import re
 
@@ -33,19 +34,15 @@ def render(query: str, results: list[dict], jurisdiction: str | None) -> None:
         return
 
     if not os.environ.get("ANTHROPIC_API_KEY"):
-        st.markdown(
-            """
-            <div class="tt-memo">
-              <div class="tt-memo-eyebrow">Editorial · Memo</div>
-              <h2>Memorandum</h2>
-              <div class="tt-memo-byline">A research note for the attorney of record.</div>
-              <div class="tt-memo-fallback">
-                Set <code>ANTHROPIC_API_KEY</code> in the environment to enable the AI memo.
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        fallback_html = (
+            '<div class="tt-memo">'
+            '<div class="tt-memo-eyebrow">Editorial &middot; Memo</div>'
+            '<h2>Memorandum</h2>'
+            '<div class="tt-memo-byline">A research note for the attorney of record.</div>'
+            '<div class="tt-memo-fallback">Set <code>ANTHROPIC_API_KEY</code> in the environment to enable the AI memo.</div>'
+            '</div>'
         )
+        st.markdown(fallback_html, unsafe_allow_html=True)
         return
 
     cache_key = ("memo", query, jurisdiction, tuple(s.get("id") for s in results))
@@ -62,20 +59,13 @@ def render(query: str, results: list[dict], jurisdiction: str | None) -> None:
         body_html = f"<p>{body_html}</p>"
 
     juris_label = (jurisdiction or "Any jurisdiction").upper()
-    safe_query = _html_escape(query)
-    st.markdown(
-        f"""
-        <div class="tt-memo">
-          <div class="tt-memo-eyebrow">Editorial · Memo</div>
-          <h2>Memorandum</h2>
-          <div class="tt-memo-byline">Re: <em>{safe_query}</em> · {juris_label}</div>
-          <div class="tt-memo-body">{body_html}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    safe_query = _html.escape(query)
+    memo_html = (
+        '<div class="tt-memo">'
+        '<div class="tt-memo-eyebrow">Editorial &middot; Memo</div>'
+        '<h2>Memorandum</h2>'
+        f'<div class="tt-memo-byline">Re: <em>{safe_query}</em> &middot; {juris_label}</div>'
+        f'<div class="tt-memo-body">{body_html}</div>'
+        '</div>'
     )
-
-
-def _html_escape(text: str) -> str:
-    import html
-    return html.escape(text)
+    st.markdown(memo_html, unsafe_allow_html=True)

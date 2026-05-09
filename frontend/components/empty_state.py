@@ -12,14 +12,12 @@ MODES = [
 
 def render() -> None:
     cards = "".join(
-        f"""
-        <div class="tt-mode-card">
-          <div class="tt-mode-num">{num}</div>
-          <h4>{label}</h4>
-          <p>{desc}</p>
-          <span class="tt-mode-eg">{eg}</span>
-        </div>
-        """
+        f'<div class="tt-mode-card">'
+        f'<div class="tt-mode-num">{num}</div>'
+        f'<h4>{label}</h4>'
+        f'<p>{desc}</p>'
+        f'<span class="tt-mode-eg">{eg}</span>'
+        f'</div>'
         for num, label, desc, eg in MODES
     )
     st.markdown(f'<div class="tt-explainer">{cards}</div>', unsafe_allow_html=True)

@@ -39,21 +39,19 @@ def render(statute: dict) -> None:
         if source_url else ""
     )
 
-    st.markdown(
-        f"""
-        <div class="tt-card" id="statute-{sid}">
-          <div class="tt-card-meta">
-            <span class="tt-citation">{cite}</span>
-            <span class="tt-meta-spacer"></span>
-          </div>
-          <h3 class="tt-card-title">{title}</h3>
-          <div class="tt-card-body">{excerpt}</div>
-          {factors_html}
-          {source_html}
-        </div>
-        """,
-        unsafe_allow_html=True,
+    card_html = (
+        f'<div class="tt-card" id="statute-{sid}">'
+        f'<div class="tt-card-meta">'
+        f'<span class="tt-citation">{cite}</span>'
+        f'<span class="tt-meta-spacer"></span>'
+        f'</div>'
+        f'<h3 class="tt-card-title">{title}</h3>'
+        f'<div class="tt-card-body">{excerpt}</div>'
+        f'{factors_html}'
+        f'{source_html}'
+        f'</div>'
     )
+    st.markdown(card_html, unsafe_allow_html=True)
 
     pinned_ids = {p["id"] for p in st.session_state.get("case_pinned", [])}
     is_pinned = sid in pinned_ids

@@ -17,7 +17,7 @@ def _build_markdown(pinned: list[dict], memo: str | None) -> str:
         if s.get("source_url"):
             lines.append(f"[Source]({s['source_url']})")
         lines.append("")
-        body = s.get("body") or ""
+        body = s.get("body") or s.get("full_text") or ""
         lines.append(body[:1500] + ("…" if len(body) > 1500 else ""))
         lines.append("")
     if memo:
@@ -33,14 +33,12 @@ def render() -> None:
     memo = st.session_state.get("last_memo")
 
     with st.sidebar:
-        st.markdown(
-            f"""
-            <div class="tt-sidebar-eyebrow">The Working File</div>
-            <div class="tt-sidebar-title">Case File <span class="tt-badge">{len(pinned):02d}</span></div>
-            <div class="tt-sidebar-rule"></div>
-            """,
-            unsafe_allow_html=True,
+        header = (
+            '<div class="tt-sidebar-eyebrow">The Working File</div>'
+            f'<div class="tt-sidebar-title">Case File <span class="tt-badge">{len(pinned):02d}</span></div>'
+            '<div class="tt-sidebar-rule"></div>'
         )
+        st.markdown(header, unsafe_allow_html=True)
 
         if not pinned:
             st.markdown(
@@ -53,16 +51,13 @@ def render() -> None:
             cite = _html.escape(_citation(s))
             title = _html.escape((s.get("title") or "")[:80])
             sid = s.get("id", "x")
-            st.markdown(
-                f"""
-                <div class="tt-pinned-item">
-                  <div class="tt-pinned-cite">{cite}</div>
-                  <div class="tt-pinned-title">{title}</div>
-                </div>
-                <div class="tt-unpin-marker"></div>
-                """,
-                unsafe_allow_html=True,
+            item_html = (
+                '<div class="tt-pinned-item">'
+                f'<div class="tt-pinned-cite">{cite}</div>'
+                f'<div class="tt-pinned-title">{title}</div>'
+                '</div>'
             )
+            st.markdown(item_html, unsafe_allow_html=True)
             if st.button("Remove", key=f"unpin-{sid}"):
                 st.session_state.case_pinned = [
                     p for p in pinned if p["id"] != sid
