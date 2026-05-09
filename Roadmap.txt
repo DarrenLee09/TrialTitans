@@ -8,8 +8,9 @@
          (header columns: Statute, State, Universal Citation, Section #, Statute Language,
          Complete Statute, Contributing Factor).
   [ ] 2. Set ANTHROPIC_API_KEY in .env (no .env file present as of 2026-05-09 re-audit)
-  [ ] 3. Decide model: spec says claude-sonnet-4-20250514 but current code uses
-         claude-opus-4-7 — pick one and align ai/prompts.py + retrieval/reranker.py
+  [x] 3. Decide model & align — DONE: ai/answer_generator.py:17 and retrieval/reranker.py:12
+         both set MODEL = "claude-sonnet-4-6". Aligned (different from spec's
+         claude-sonnet-4-20250514 alias, but consistent across modules).
 
   Phase 1 — Schema alignment (~30 min) — 3/3 COMPLETE (re-audit 2026-05-09)
   [x] 4. Rewrite db/schema.sql to match spec — DONE (commit 90a1402): added citation,
@@ -32,18 +33,28 @@
          All three pass against the test fixture's tmp DB.
                                                                                             
   Phase 3 — Multi-state scraping (~90 min, parallel with Phase 4)
-  [ ] 9. Per-state adapters in harvester/scrape_statutes.py: CA (leginfo), FL (flsenate),
-         NY (nysenate REST API), TX (capitol)
+  [~] 9. Per-state adapters: CA (leginfo), FL, NY, TX — IN PROGRESS: harvester/
+         scrape_leginfo.py (340 lines) is a production-grade CA leginfo scraper with
+         TOC traversal, polite delays, and new-schema inserts. FL/NY/TX adapters NOT
+         written. Generic harvester/scrape_statutes.py still references old schema
+         columns (jurisdiction/code_name/body) — broken until updated or deleted.
   [ ] 10. Justia fallback module covering IL/GA/OH (one parser, three URL templates)
-  [ ] 11. harvester/validate_sources.py — HEAD every URL, set is_verified flag (don't
-          delete)
+          — TODO: no Justia module exists.
+  [~] 11. harvester/validate_sources.py — HEAD every URL, set is_verified flag — IN
+          PROGRESS: validate_sources.py:18-31 HEADs URLs and reports OK/failures, but
+          does NOT write is_verified back to the DB. One-line fix: UPDATE statutes SET
+          is_verified=1 WHERE id IN (...).
 
   Phase 4 — Claude tagging (~60 min)
   [ ] 12. JSON-mode classifier prompt in ai/prompts.py with all 17 factor codes
+          — TODO: ai/prompts.py only has the attorney-memo prompts.
   [ ] 13. Rewrite harvester/classify_factors.py: batch of 10, parse JSON, write
           confidence/tagged_by='claude', cache by statute id so restarts don't re-spend
           tokens
-  [ ] 14. Run on all ingested + scraped statutes
+          — TODO: classify_factors.py:7-32 is keyword matching (splits factor labels
+          into words and substring-matches statute text). Not Claude. Writes default
+          tagged_by='manual'.
+  [ ] 14. Run on all ingested + scraped statutes — blocked on items 12 + 13.
   [x] 15. Rebuild FTS index (harvester/build_fts_index.py is already good) — DONE
           2026-05-09: fixed external-content FTS5 bug (DELETE FROM → delete-all command),
           rebuild verified. Schema rewrite (Phase 1 item 4) replaced this with sync
@@ -52,38 +63,74 @@
           jurisdiction": the test code references the OLD schema. Rolls into Phase 5
           item 16 (update retrieval modules to new schema), not a Phase 4 regression.                      
                                                                                             
-  Phase 5 — Retrieval upgrade (~45 min)
-  [ ] 16. Update retrieval/exact_lookup.py and factor_search.py to new schema
-          (jurisdiction_id, return tags)
+  Phase 5 — Retrieval upgrade (~45 min) — 1/5 COMPLETE (re-audit 2026-05-09)
+  [x] 16. Update retrieval/exact_lookup.py + factor_search.py — DONE (commits ae6ca0e
+          + 1c90051). Both files migrated to new schema (jurisdiction_id FK, section_number,
+          statute_factor_tags, contributing_factors). fts_search.py and query_router.py
+          cascade-fixed. Note: retrieval modules do NOT yet populate a `factors` field
+          on result dicts — frontend result_card.py expects this and silently shows
+          empty pills. Add factor-tag join to exact_lookup/factor_search/fts_search.
   [ ] 17. Harden retrieval/citation_parser.py for §23152, CA 23152, Veh. Code §23152
+          — TODO: parser unchanged. Still requires both jurisdiction AND code; no §-only
+          support; missing IL/GA/OH aliases (only CA/NY/TX/FL).
   [ ] 18. NEW ai/query_interpreter.py — NL → {jurisdictions, factors, intent}
+          — TODO: file does not exist. Note: vector_search.py (bonus work) provides
+          semantic search but no structured filter extraction.
   [ ] 19. Update retrieval/query_router.py to call interpreter for NL queries
+          — TODO: query_router.py:24-47 still does sequential fallback
+          (citation→factor→fts→semantic). No interpreter call.
   [ ] 20. Add attorney explanation in retrieval/reranker.py
+          — TODO: reranker returns ranked IDs only.
 
-  Phase 6 — Frontend rebuild (~90 min)
-  [ ] 21. Restructure frontend/ → app/ (or document the rename) and add app/main.py,
-          app/config.py
-  [ ] 22. Three-tab UI in search_bar.py: Citation / Factor / Natural Language
-  [ ] 23. Result card: factor badges, confidence score, expandable full text, source link
-  [ ] 24. Sidebar coverage panel: per-state statute count + % coverage
+  Phase 6 — Frontend rebuild (~90 min) — 0/4 complete; Streamlit redesign shipped
+  but not against this roadmap's structure.
+  [ ] 21. Restructure frontend/ → app/ — NOT DONE (effectively skipped). frontend/
+          remains and works fine; consider closing this item or re-scoping.
+  [ ] 22. Three-tab UI Citation/Factor/NL — NOT DONE. components/hero_search.py:46-66
+          uses one search box + jurisdiction dropdown + AI toggle + 3 example chips.
+          Auto-routes via router; no explicit tabs.
+  [~] 23. Result card: factor badges, confidence, expandable, source link — IN PROGRESS:
+          components/result_card.py renders factor pills (line 17), source link (line 38),
+          and expandable full text (line 73). MISSING: confidence score; and the
+          `factors` field is read but never populated by retrieval — pills always empty.
+          Fix needs to happen alongside Phase 5 item 16's tag-join work.
+  [ ] 24. Sidebar coverage panel — NOT DONE. Sidebar shows pinned case file, not a
+          per-state coverage matrix.
 
   Phase 7 — Organizer extension (~60 min, scoring lever)
-  [ ] 25. Add cases + case_statutes tables (or session_state for v1)
-  [ ] 26. Workspace UI: save / tag (primary/supporting/background) / notes
-  [ ] 27. Gap detector: matrix of factors × states showing where coverage is missing
-  [ ] 28. Export workspace as CSV/Markdown
+  [x] 25. cases / case_statutes OR session_state — DONE via session_state:
+          streamlit_app.py:35-36 initializes st.session_state.case_pinned;
+          components/case_file_sidebar.py renders the pinned list.
+  [~] 26. Workspace UI: save / tag (primary/supporting/background) / notes — IN
+          PROGRESS: pin/unpin works (result_card.py:62-69, case_file_sidebar.py:61-65).
+          MISSING: tag-tier system (primary/supporting/background) and per-statute notes.
+  [ ] 27. Gap detector matrix of factors × states — NOT DONE.
+  [~] 28. Export workspace as CSV/Markdown — IN PROGRESS: Markdown export works
+          (case_file_sidebar.py:68-74). CSV export NOT implemented.
 
   Phase 8 — Polish & demo (~45 min)
-  [~] 29. Make all tests pass (pytest) — IN PROGRESS: re-audit 2026-05-09 the suite
-          is 6 passed / 3 failed. test_eval_coverage (3) all pass. The 3 failures
-          (test_factor_search ×2, test_fts_search ×1) are because retrieval-side test
-          code references the old schema columns — fixes belong with Phase 5 item 16.
-  [ ] 30. Run URL validator end-to-end, fix or flag failures
-  [ ] 31. Update README with setup + demo flow
+  [?] 29. Make all tests pass (pytest) — UNVERIFIED in 2026-05-09 re-audit: commit
+          1c90051 ("Fix tests for new schema") suggests the 3 P5 failures are now
+          resolved. New test_frontend_smoke.py exists. Re-run pytest to confirm.
+  [ ] 30. Run URL validator end-to-end, fix or flag failures — blocked on Phase 3
+          item 11 (validator doesn't write is_verified yet).
+  [~] 31. Update README — IN PROGRESS: README.md (52 lines) covers setup + layout.
+          MISSING: demo flow walkthrough; architecture diagram still references old
+          schema field names (statutes / statute_relationships / statute_fts only).
   [ ] 32. Rehearse the 5-min demo (citation → factor → NL → organizer)
 
   ---
-  Legend: [x] done   [~] in progress   [ ] not started
+  Bonus work shipped (not on roadmap):
+  - harvester/scrape_leginfo.py (340 lines) — production CA leginfo scraper with
+    TOC traversal, polite delays, html→sections parser. Partially covers item 9.
+  - harvester/build_embeddings.py + statute_embeddings table + retrieval/vector_search.py
+    — sentence-transformers (all-MiniLM-L6-v2) semantic search, integrated as 4th
+    fallback in query_router.py:41-45. Partially substitutes for item 18.
+  - Frontend redesign (PR #1) — magazine-TOC card aesthetic, hero search row,
+    case-file sidebar, AI memo rail. New tests/test_frontend_smoke.py.
+
+  ---
+  Legend: [x] done   [~] in progress   [ ] not started   [?] needs verification
   Session log 2026-05-09: project bootstrap (.venv + deps + db/seed) completed; FTS
   rebuild bug fixed; ingestion design approved (see docs/superpowers/specs/).
   Audit 2026-05-09: verified P1 (items 4,5,6) and P2 (items 7,8) against codebase —
@@ -93,7 +140,13 @@
   Re-audit 2026-05-09 (after commits 90a1402 + 6443454): P1 and P2 now ALL COMPLETE
   (5/5). Schema, jurisdictions, factor loader, ingest pipeline, and eval-coverage
   tests all verified. P0 item 1 restored to [x]. Remaining test failures (3) are
-  retrieval-side tests using old schema columns — work belongs to P5 item 16.                          
+  retrieval-side tests using old schema columns — work belongs to P5 item 16.
+  Full audit 2026-05-09 (after commits ac7a188 + 0e2943e + 1fa128d + 2c6d1cf):
+  scorecard 10 done / 6 in progress / 16 not done / 1 unverified. Phase 5 item 16
+  ✅ done. Phase 0 item 3 ✅ done (model aligned). Bonus work shipped: CA leginfo
+  scraper, vector embeddings + semantic search, frontend redesign. Cross-cutting
+  gap: retrieval result dicts don't carry factor tags, so result_card factor pills
+  always render empty — fold into P5 item 16 follow-up or P6 item 23.                          
                                                                                             
   ---                                                                                       
   Critical-path order if you're solo: 1 → 4 → 7 → 12 → 13 → 16 → 22 → 27. Skip Phases 3     
