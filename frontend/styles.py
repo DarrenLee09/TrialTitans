@@ -941,6 +941,46 @@ section[data-testid="stSidebar"] [data-testid="stDownloadButton"] > button:hover
 /* Spinner — match brand */
 .stSpinner > div > div { border-top-color: var(--brand) !important; }
 
+/* ---------------- Case-file view (Organizer) ---------------- */
+.tt-case-summary {
+  padding: 22px 24px;
+  background: var(--glass-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  box-shadow: var(--shadow-sm);
+  margin: 16px 0 24px;
+}
+.tt-case-summary h3 {
+  font-family: 'Geist Mono', monospace !important;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--brand-2);
+  margin: 0 0 10px;
+}
+.tt-case-summary p {
+  font-family: 'Geist', sans-serif;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--ink);
+  margin: 0;
+  white-space: pre-wrap;
+}
+.tt-section-label {
+  font-family: 'Geist Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-2);
+  margin: 28px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
 /* ---------------- Misc ---------------- */
 [data-testid="stHorizontalBlock"] { gap: 1rem; }
 [data-baseweb="input"] { background: transparent !important; }

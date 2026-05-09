@@ -14,12 +14,14 @@ from frontend import styles
 from frontend.components import (
     ai_memo_rail,
     case_file_sidebar,
+    case_file_view,
     empty_state,
     hero_search,
     loading_state,
     result_card,
     top_bar,
 )
+from organizer import fill_case as organizer
 from retrieval import query_router, reranker
 
 
@@ -39,7 +41,7 @@ def _run() -> None:
 
     top_bar.render()
 
-    query, jurisdiction, use_ai = hero_search.render()
+    query, jurisdiction, use_ai, mode = hero_search.render()
 
     if not query:
         empty_state.render()
@@ -52,7 +54,7 @@ def _run() -> None:
     routed = query_router.route(query, jurisdiction=jurisdiction or None, limit=20)
     results = routed["results"]
 
-    if use_ai and routed["kind"] in {"hybrid", "fts"} and results:
+    if mode == "search" and use_ai and routed["kind"] in {"hybrid", "fts"} and results:
         results = reranker.rerank(query, results, top_k=8)
 
     skeleton_slot.empty()
@@ -66,6 +68,18 @@ def _run() -> None:
         '</div>'
     )
     st.markdown(route_html, unsafe_allow_html=True)
+
+    if mode == "case_file":
+        if not results:
+            st.warning(
+                "No relevant statutes retrieved — refine the case description or "
+                "broaden the jurisdiction filter."
+            )
+            st.stop()
+        with st.spinner("Filling case file…"):
+            filled = organizer.fill_case(query, results, jurisdiction=jurisdiction)
+        case_file_view.render(filled, query)
+        return
 
     if not results:
         no_results_html = (
