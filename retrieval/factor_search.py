@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from db.seed import connect
+from retrieval._tags import attach_factor_tags
 
 
 def list_factors() -> list[dict]:
@@ -35,4 +36,6 @@ def by_factor(code: str, jurisdiction: str | None = None, limit: int = 50) -> li
     args.append(limit)
 
     with connect() as conn:
-        return [dict(r) for r in conn.execute(sql, args)]
+        rows = [dict(r) for r in conn.execute(sql, args)]
+        attach_factor_tags(conn, rows)
+        return rows
