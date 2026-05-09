@@ -1,0 +1,6 @@
+[
+  { "code": "CA", "name": "California", "country": "US" },
+  { "code": "NY", "name": "New York",    "country": "US" },
+  { "code": "TX", "name": "Texas",       "country": "US" },
+  { "code": "FL", "name": "Florida",     "country": "US" }
+]

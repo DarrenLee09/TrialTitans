@@ -1,0 +1,9 @@
+{
+  "CA": {
+    "Vehicle Code": {
+      "base_url": "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml",
+      "query_template": "?lawCode=VEH&sectionNum={section}",
+      "publisher": "California Legislative Information"
+    }
+  }
+}
