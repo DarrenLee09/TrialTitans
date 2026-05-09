@@ -18,8 +18,9 @@ def rerank(query: str, candidates: list[dict], top_k: int = 5) -> list[dict]:
 
     client = Anthropic()
     payload = [
-        {"id": c["id"], "section": c.get("section"), "title": c.get("title"),
-         "snippet": c.get("snippet") or (c.get("body") or "")[:500]}
+        {"id": c["id"], "citation": c.get("citation"), "section": c.get("section"),
+         "title": c.get("title"),
+         "snippet": c.get("snippet") or (c.get("full_text") or "")[:500]}
         for c in candidates
     ]
     msg = client.messages.create(

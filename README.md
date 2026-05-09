@@ -33,12 +33,12 @@ pip install -r requirements.txt
 python -m db.seed                    # create db/legal_harvester.db
 python -m harvester.ingest_csv       # load data/eval-ca-vehicle-code.csv
 python -m harvester.build_fts_index  # build FTS5 index
-streamlit run frontend/streamlit_app.py
+streamlit run app/main.py
 ```
 
 ## Layout
 
-- `frontend/` — Streamlit UI
+- `app/` — Streamlit UI (entrypoint `app/main.py`, settings in `app/config.py`)
 - `harvester/` — ingestion pipeline (CSV, scraping, classification, indexing)
 - `retrieval/` — query routing, citation/exact/FTS/factor search, optional reranker
 - `ai/` — Claude prompt templates and answer generation
