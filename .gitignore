@@ -3,7 +3,6 @@ __pycache__/
 .venv/
 .env
 .DS_Store
-db/legal_harvester.db
 db/*.db-journal
 .pytest_cache/
 .streamlit/secrets.toml
