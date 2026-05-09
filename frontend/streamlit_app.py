@@ -4,41 +4,91 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-# Make repo root importable when running `streamlit run frontend/streamlit_app.py`.
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 import streamlit as st
 
-from ai import answer_generator
-from frontend.components import case_workspace, result_card, search_bar
+from frontend import styles
+from frontend.components import (
+    ai_memo_rail,
+    case_file_sidebar,
+    empty_state,
+    hero_search,
+    loading_state,
+    result_card,
+    top_bar,
+)
 from retrieval import query_router, reranker
 
-st.set_page_config(page_title="TrialTitans — Statute Search", layout="wide")
-st.title("TrialTitans — Legal Statute Search")
 
-query, jurisdiction, use_ai = search_bar.render()
+def _run() -> None:
+    st.set_page_config(
+        page_title="Trial & Titans — Legal Research Desk",
+        layout="wide",
+        initial_sidebar_state="expanded",
+    )
 
-if query:
+    styles.inject()
+
+    if "case_pinned" not in st.session_state:
+        st.session_state.case_pinned = []
+
+    case_file_sidebar.render()
+
+    top_bar.render()
+
+    query, jurisdiction, use_ai = hero_search.render()
+
+    if not query:
+        empty_state.render()
+        st.stop()
+
+    skeleton_slot = st.empty()
+    with skeleton_slot.container():
+        loading_state.render()
+
     routed = query_router.route(query, jurisdiction=jurisdiction or None, limit=20)
     results = routed["results"]
 
-    if use_ai and routed["kind"] == "fts":
+    if use_ai and routed["kind"] == "fts" and results:
         results = reranker.rerank(query, results, top_k=8)
 
-    st.caption(f"Route: **{routed['kind']}**  ·  {len(results)} result(s)")
+    skeleton_slot.empty()
 
-    left, right = st.columns([2, 1])
-    with left:
+    st.session_state["last_results"] = results
+
+    st.markdown(
+        f'<div class="tt-route-caption">'
+        f'<span>route · <span class="tt-route-kind">{routed["kind"]}</span></span>'
+        f'<span class="tt-route-count">{len(results):02d} result(s)</span>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    if not results:
+        st.markdown(
+            '<div class="tt-no-results">'
+            '<h3>Nothing on the record.</h3>'
+            '<p>Try a different phrasing — a citation like <em>CA Veh Code 22107</em>, '
+            'a factor like <em>failure to yield</em>, or describe the accident in plain English.</p>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        st.stop()
+
+    if use_ai:
+        main_col, rail_col = st.columns([3, 2], gap="large")
+        with main_col:
+            for s in results:
+                result_card.render(s)
+        with rail_col:
+            ai_memo_rail.render(query, results, jurisdiction)
+    else:
         for s in results:
             result_card.render(s)
 
-    with right:
-        if use_ai and results:
-            st.subheader("AI summary")
-            with st.spinner("Drafting attorney memo…"):
-                memo = answer_generator.answer(query, results, jurisdiction=jurisdiction)
-            st.markdown(memo)
 
-        case_workspace.render(results)
+if __name__ == "__main__":
+    _run()

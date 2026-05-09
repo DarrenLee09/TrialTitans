@@ -55,3 +55,11 @@ CREATE VIRTUAL TABLE IF NOT EXISTS statute_fts USING fts5(
     content='statutes',
     content_rowid='id'
 );
+
+CREATE TABLE IF NOT EXISTS statute_embeddings (
+    statute_id  INTEGER PRIMARY KEY REFERENCES statutes(id) ON DELETE CASCADE,
+    embedding   BLOB NOT NULL,
+    model_name  TEXT NOT NULL DEFAULT 'all-MiniLM-L6-v2',
+    dims        INTEGER NOT NULL DEFAULT 384,
+    created_at  TEXT DEFAULT CURRENT_TIMESTAMP
+);

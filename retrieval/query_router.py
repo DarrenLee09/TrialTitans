@@ -3,9 +3,9 @@ from __future__ import annotations
 
 from typing import Literal, TypedDict
 
-from retrieval import citation_parser, exact_lookup, factor_search, fts_search
+from retrieval import citation_parser, exact_lookup, factor_search, fts_search, vector_search
 
-QueryKind = Literal["citation", "factor", "fts"]
+QueryKind = Literal["citation", "factor", "fts", "semantic"]
 
 
 class RoutedResult(TypedDict):
@@ -34,7 +34,14 @@ def route(query: str, jurisdiction: str | None = None, limit: int = 20) -> Route
             "results": factor_search.by_factor(factor, jurisdiction=jurisdiction, limit=limit),
         }
 
-    return {
-        "kind": "fts",
-        "results": fts_search.search(query, jurisdiction=jurisdiction, limit=limit),
-    }
+    fts_results = fts_search.search(query, jurisdiction=jurisdiction, limit=limit)
+    if fts_results:
+        return {"kind": "fts", "results": fts_results}
+
+    if vector_search.has_embeddings(jurisdiction=jurisdiction):
+        return {
+            "kind": "semantic",
+            "results": vector_search.search(query, jurisdiction=jurisdiction, limit=limit),
+        }
+
+    return {"kind": "fts", "results": []}

@@ -6,13 +6,7 @@ from db.seed import connect
 
 def rebuild() -> int:
     with connect() as conn:
-        conn.execute("DELETE FROM statute_fts")
-        conn.execute(
-            """
-            INSERT INTO statute_fts(rowid, title, body, section, jurisdiction)
-            SELECT id, COALESCE(title, ''), body, section, jurisdiction FROM statutes
-            """
-        )
+        conn.execute("INSERT INTO statute_fts(statute_fts) VALUES ('rebuild')")
         conn.commit()
         n = conn.execute("SELECT COUNT(*) AS c FROM statute_fts").fetchone()["c"]
     return n
