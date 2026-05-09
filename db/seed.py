@@ -109,6 +109,9 @@ def main() -> None:
     print(f"Initialized {DB_PATH}")
     print(f"  jurisdictions seeded: {n_jur}")
     print(f"  contributing_factors seeded: {n_fac}")
+    print("Next:")
+    print("  python -m harvester.ingest_csv       # load eval CSV into statutes")
+    print("  python -m harvester.build_embeddings # semantic search index")
 
 
 if __name__ == "__main__":

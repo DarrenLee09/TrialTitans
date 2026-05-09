@@ -54,7 +54,7 @@ def _run() -> None:
     routed = query_router.route(query, jurisdiction=jurisdiction or None, limit=20)
     results = routed["results"]
 
-    if mode == "search" and use_ai and routed["kind"] == "fts" and results:
+    if mode == "search" and use_ai and routed["kind"] in {"hybrid", "fts"} and results:
         results = reranker.rerank(query, results, top_k=8)
 
     skeleton_slot.empty()
@@ -93,12 +93,19 @@ def _run() -> None:
         st.stop()
 
     if use_ai:
-        main_col, rail_col = st.columns([3, 2], gap="large")
-        with main_col:
-            for s in results:
-                result_card.render(s)
-        with rail_col:
-            ai_memo_rail.render(query, results, jurisdiction)
+        # Answer-first layout: AI memo full width on top, cited statutes below
+        # under a "Sources" rule. Citation pills inside the memo scroll-jump to
+        # the corresponding card via #statute-<id> anchors.
+        ai_memo_rail.render(query, results, jurisdiction)
+        st.markdown(
+            '<div class="tt-sources-divider">'
+            f'<span>Cited statutes</span>'
+            f'<span class="tt-sources-count">{len(results):02d}</span>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        for s in results:
+            result_card.render(s)
     else:
         for s in results:
             result_card.render(s)

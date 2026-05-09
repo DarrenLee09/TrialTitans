@@ -10,8 +10,9 @@ from db.seed import connect
 
 EXAMPLE_QUERIES = [
     ("01", "CA Veh Code 22107"),
-    ("02", "rear-ended at a stop sign"),
-    ("03", "failure to yield at intersection"),
+    ("02", "NY VAT 1192"),
+    ("03", "Fla. Stat. 316.193"),
+    ("04", "rear-ended at a stop sign"),
 ]
 
 
@@ -56,13 +57,13 @@ def render() -> tuple[str, str | None, bool, str]:
     mode = next((m for m, label in MODES if label == mode_label), "search")
 
     hero_label = (
-        "Search the record" if mode == "search"
+        "Search statutes" if mode == "search"
         else "Describe the case — we'll build the file"
     )
     st.markdown(f'<div class="tt-hero-label">{hero_label}</div>', unsafe_allow_html=True)
 
     placeholder = (
-        "Citation, factor, or describe the accident…" if mode == "search"
+        "Search by citation, factor, or describe the accident…" if mode == "search"
         else "Describe the accident, client role, injuries, treatment, coverage…"
     )
 
@@ -93,7 +94,7 @@ def render() -> tuple[str, str | None, bool, str]:
         with cols[2]:
             use_ai = st.toggle(
                 "AI memo",
-                value=st.session_state.get("use_ai", False),
+                value=st.session_state.get("use_ai", True),
                 key="use_ai",
             )
 
@@ -102,7 +103,7 @@ def render() -> tuple[str, str | None, bool, str]:
             f'<a class="tt-chip" href="?q={quote(eg)}"><span class="tt-chip-eg-mark">{num}</span>{_html.escape(eg)}</a>'
             for num, eg in EXAMPLE_QUERIES
         )
-        st.markdown('<div class="tt-chip-label">Try one</div>', unsafe_allow_html=True)
+        st.markdown('<div class="tt-chip-label">Try a sample query</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="tt-chip-row">{chips_html}</div>', unsafe_allow_html=True)
 
     return query, jurisdiction, use_ai, mode

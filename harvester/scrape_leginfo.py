@@ -18,6 +18,40 @@ from db.seed import connect
 BASE_URL = "https://leginfo.legislature.ca.gov"
 DEFAULT_CODE = "VEH"
 REQUEST_DELAY_S = 0.5
+
+# Canonical short citation prefix per California code abbreviation.
+# Used to build "CA <prefix> §<section>" citations that match how attorneys cite.
+CA_CODE_CITATIONS: dict[str, str] = {
+    "BPC":  "Bus & Prof Code",
+    "CCP":  "Code Civ Proc",
+    "CIV":  "Civ Code",
+    "COM":  "Com Code",
+    "CORP": "Corp Code",
+    "EDC":  "Educ Code",
+    "ELEC": "Elec Code",
+    "EVID": "Evid Code",
+    "FAC":  "Food & Agric Code",
+    "FAM":  "Fam Code",
+    "FIN":  "Fin Code",
+    "GOV":  "Gov Code",
+    "HNC":  "Harb & Nav Code",
+    "HSC":  "Health & Safety Code",
+    "INS":  "Ins Code",
+    "LAB":  "Lab Code",
+    "MVC":  "Mil & Vet Code",
+    "PCC":  "Pub Cont Code",
+    "PEN":  "Pen Code",
+    "PRC":  "Pub Resources Code",
+    "PROB": "Prob Code",
+    "PUC":  "Pub Util Code",
+    "RTC":  "Rev & Tax Code",
+    "SHC":  "Sts & Hwys Code",
+    "UIC":  "Unemp Ins Code",
+    "VEH":  "Veh Code",
+    "WAT":  "Wat Code",
+    "WIC":  "Welf & Inst Code",
+}
+
 REQUEST_TIMEOUT_S = 30.0
 USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -267,7 +301,12 @@ def _get_jurisdiction_id(jurisdiction_code: str) -> int:
         return int(row["id"])
 
 
-def _save_records(records: list[StatuteRecord], jurisdiction_id: int, jurisdiction_code: str) -> int:
+def _citation_for(jurisdiction_code: str, code: str, section_number: str) -> str:
+    prefix = CA_CODE_CITATIONS.get(code.upper(), f"{code.upper()} Code")
+    return f"{jurisdiction_code} {prefix} \u00a7{section_number}"
+
+
+def _save_records(records: list[StatuteRecord], jurisdiction_id: int, jurisdiction_code: str, code: str) -> int:
     if not records:
         return 0
     with connect() as conn:
@@ -286,7 +325,7 @@ def _save_records(records: list[StatuteRecord], jurisdiction_id: int, jurisdicti
             [
                 (
                     jurisdiction_id,
-                    f"{jurisdiction_code} Veh Code \u00a7{record.section_number}",
+                    _citation_for(jurisdiction_code, code, record.section_number),
                     record.section_number,
                     record.title,
                     record.full_text,
@@ -323,7 +362,7 @@ def scrape_code(code: str = DEFAULT_CODE, limit: int = 0) -> int:
             if not records:
                 print("  [skip] no sections found")
                 continue
-            stored += _save_records(records, jurisdiction_id, "CA")
+            stored += _save_records(records, jurisdiction_id, "CA", code)
             print(f"  [ok] stored {len(records)} section(s)")
     print(f"Stored {stored} section(s) for {code}")
     return stored

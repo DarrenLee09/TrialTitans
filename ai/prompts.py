@@ -21,10 +21,21 @@ ATTORNEY_ANSWER_USER_TEMPLATE = """\
 # Retrieved statutes
 {statutes_block}
 
-Write a brief memo (under 250 words) covering:
-1. Which statutes are on point and why.
-2. What each one requires or prohibits.
-3. Any obvious gaps or ambiguities the attorney should investigate.
+Write a brief memo (under 250 words) with two parts:
+
+**Summary** — open with a 2–4 sentence synthesis that names every statute by
+its section number (cite each as "<Jurisdiction> <Code> § <Section>") and
+explains how they relate to one another and to the question: which is the
+general rule, which carve out exceptions, which impose duties vs. penalties,
+how they stack or overlap, and where one provision triggers or limits another.
+This summary must mention each section number explicitly.
+
+**Statutes** — then a short bulleted list, one bullet per statute, in this
+exact form:
+- <Jurisdiction> <Code> § <Section> — one-line note on what it does and how
+  it fits the picture above.
+
+Close with one sentence on any gap or ambiguity worth investigating.
 """
 
 

@@ -13,7 +13,7 @@ _MODEL: Any | None = None
 _CACHE: "EmbeddingCache | None" = None
 
 
-@dataclass(slots=True)
+@dataclass
 class EmbeddingCache:
     signature: tuple[int, int, int, int]
     rows: list[dict]
@@ -34,12 +34,30 @@ def _db_signature() -> tuple[int, int, int, int]:
     return tuple(row)
 
 
-def _get_model() -> Any:
-    global _MODEL
-    if _MODEL is None:
-        from sentence_transformers import SentenceTransformer
+_MODEL_UNAVAILABLE = False
 
-        _MODEL = SentenceTransformer(MODEL_NAME)
+
+def _get_model() -> Any | None:
+    """Lazily load sentence-transformers. Returns None if unavailable.
+
+    The model is heavy (~80MB download) and not every deployment will install
+    it (e.g. a thin streamlit container that only does FTS). When it's missing
+    the router silently drops vector_search from the merge.
+    """
+    global _MODEL, _MODEL_UNAVAILABLE
+    if _MODEL_UNAVAILABLE:
+        return None
+    if _MODEL is None:
+        try:
+            from sentence_transformers import SentenceTransformer
+        except ImportError:
+            _MODEL_UNAVAILABLE = True
+            return None
+        try:
+            _MODEL = SentenceTransformer(MODEL_NAME)
+        except Exception:
+            _MODEL_UNAVAILABLE = True
+            return None
     return _MODEL
 
 
@@ -135,6 +153,8 @@ def search(query: str, jurisdiction: str | None = None, limit: int = 20) -> list
         return []
 
     model = _get_model()
+    if model is None:
+        return []
     query_vector = np.asarray(
         model.encode(query, convert_to_numpy=True, normalize_embeddings=True, show_progress_bar=False),
         dtype=np.float32,
@@ -150,4 +170,8 @@ def search(query: str, jurisdiction: str | None = None, limit: int = 20) -> list
         score = float(similarities[int(position)])
         result["score"] = max(0.0, min(1.0, (score + 1.0) / 2.0))
         results.append(result)
+
+    from retrieval._tags import attach_factor_tags
+    with connect() as conn:
+        attach_factor_tags(conn, results)
     return results
