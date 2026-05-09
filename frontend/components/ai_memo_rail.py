@@ -62,9 +62,9 @@ def render(query: str, results: list[dict], jurisdiction: str | None) -> None:
     safe_query = _html.escape(query)
     memo_html = (
         '<div class="tt-memo">'
-        '<div class="tt-memo-eyebrow">Editorial &middot; Memo</div>'
+        '<div class="tt-memo-eyebrow">Answer &middot; Attorney Memo</div>'
         '<h2>Memorandum</h2>'
-        f'<div class="tt-memo-byline">Re: <em>{safe_query}</em> &middot; {juris_label}</div>'
+        f'<div class="tt-memo-byline">Re: <em>{safe_query}</em> &middot; {juris_label} &middot; sources cited inline</div>'
         f'<div class="tt-memo-body">{body_html}</div>'
         '</div>'
     )

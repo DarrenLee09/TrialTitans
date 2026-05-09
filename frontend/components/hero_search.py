@@ -10,8 +10,9 @@ from db.seed import connect
 
 EXAMPLE_QUERIES = [
     ("01", "CA Veh Code 22107"),
-    ("02", "rear-ended at a stop sign"),
-    ("03", "failure to yield at intersection"),
+    ("02", "NY VAT 1192"),
+    ("03", "Fla. Stat. 316.193"),
+    ("04", "rear-ended at a stop sign"),
 ]
 
 
@@ -48,7 +49,7 @@ def render() -> tuple[str, str | None, bool]:
             "Search",
             key="query",
             label_visibility="collapsed",
-            placeholder="Citation, factor, or describe the accident…",
+            placeholder="Ask a question, paste a citation, or describe the accident…",
         )
     with cols[1]:
         juris_options = [("", "Any jurisdiction")] + _jurisdictions()
@@ -61,7 +62,7 @@ def render() -> tuple[str, str | None, bool]:
     with cols[2]:
         use_ai = st.toggle(
             "AI memo",
-            value=st.session_state.get("use_ai", False),
+            value=st.session_state.get("use_ai", True),
             key="use_ai",
         )
 

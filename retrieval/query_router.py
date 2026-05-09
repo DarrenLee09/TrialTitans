@@ -1,11 +1,13 @@
-"""Hybrid query router.
+"""Hybrid query router with live-fetch fallback.
 
 Three lanes:
     1. Citation parse hits          → exact_lookup (kind="citation")
-    2. Everything else (NL queries) → interpreter extracts {jurisdictions, factors,
-       intent}; the router then runs factor_search (per matched factor) +
-       FTS (on `intent`) + vector_search (on the original query) in parallel and
-       merges the ranked lists with reciprocal-rank fusion (kind="hybrid").
+       Cache miss falls through to live_fetch against the canonical source
+       (kind="live") so judges can query any section we didn't pre-scrape.
+    2. Everything else (NL queries) → query interpreter extracts
+       {jurisdictions, factors, intent}; we run factor_search +
+       FTS + vector_search in parallel and merge with reciprocal-rank
+       fusion (kind="hybrid").
 
 Vector search is a first-class participant in the merge, not a fallback for
 empty FTS results. RRF naturally weights statutes that appear in multiple
@@ -17,9 +19,16 @@ import sqlite3
 from typing import Iterable, Literal, TypedDict
 
 from ai.query_interpreter import interpret
-from retrieval import citation_parser, exact_lookup, factor_search, fts_search, vector_search
+from retrieval import (
+    citation_parser,
+    exact_lookup,
+    factor_search,
+    fts_search,
+    live_fetch,
+    vector_search,
+)
 
-QueryKind = Literal["citation", "hybrid"]
+QueryKind = Literal["citation", "live", "hybrid"]
 RRF_K = 60
 
 
@@ -50,7 +59,13 @@ def route(query: str, jurisdiction: str | None = None, limit: int = 20) -> Route
     citation = citation_parser.parse(query)
     if citation:
         hit = exact_lookup.lookup(citation)
-        return {"kind": "citation", "results": [hit] if hit else []}
+        if hit:
+            return {"kind": "citation", "results": [hit]}
+        # Cache miss — try fetching the section live from its canonical source.
+        live = live_fetch.fetch(citation.jurisdiction, citation.code_name, citation.section)
+        if live:
+            return {"kind": "live", "results": [live]}
+        return {"kind": "citation", "results": []}
 
     parsed = interpret(query)
     # Explicit user filter wins; otherwise use the first jurisdiction the interpreter

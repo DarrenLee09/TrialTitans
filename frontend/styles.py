@@ -257,6 +257,31 @@ section.main [data-testid="stToggle"] label {
 .tt-citation { color: var(--accent); font-weight: 600; }
 .tt-citation::before { content: "["; opacity: 0.6; }
 .tt-citation::after { content: "]"; opacity: 0.6; }
+
+.tt-live-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: rgba(34,139,82,0.12);
+  border: 1px solid rgba(34,139,82,0.5);
+  border-radius: 999px;
+  padding: 2px 9px 2px 7px;
+  font-variant-numeric: lining-nums;
+}
+.tt-live-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #228b52;
+  box-shadow: 0 0 0 0 rgba(34,139,82,0.7);
+  animation: tt-live-pulse 1.6s ease-out infinite;
+}
+@keyframes tt-live-pulse {
+  0%   { box-shadow: 0 0 0 0   rgba(34,139,82,0.55); }
+  70%  { box-shadow: 0 0 0 6px rgba(34,139,82, 0); }
+  100% { box-shadow: 0 0 0 0   rgba(34,139,82, 0); }
+}
 .tt-card-meta .tt-meta-spacer {
   flex: 1; border-bottom: 1px dotted var(--rule); transform: translateY(-2px);
 }
@@ -481,11 +506,10 @@ section[data-testid="stSidebar"] [data-testid="stDownloadButton"] > button:hover
   color: var(--accent) !important;
 }
 
-/* ---------------- AI memo rail ---------------- */
+/* ---------------- AI memo (answer-first layout) ---------------- */
 .tt-memo {
-  position: sticky;
-  top: 28px;
-  padding: 28px 32px 32px;
+  padding: 36px 44px 40px;
+  margin: 16px 0 28px;
   background:
     url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 240 240' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.10  0 0 0 0 0.08  0 0 0 0 0.06  0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E"),
     var(--paper-deep);
@@ -504,8 +528,8 @@ section[data-testid="stSidebar"] [data-testid="stDownloadButton"] > button:hover
 .tt-memo h2 {
   font-family: 'Fraunces', serif !important;
   font-weight: 700;
-  font-size: 26px;
-  letter-spacing: -0.015em;
+  font-size: 36px;
+  letter-spacing: -0.02em;
   margin: 0 0 4px;
   color: var(--ink);
 }
@@ -520,13 +544,14 @@ section[data-testid="stSidebar"] [data-testid="stDownloadButton"] > button:hover
 }
 .tt-memo-body {
   font-family: 'Newsreader', serif;
-  font-size: 16px;
-  line-height: 1.7;
+  font-size: 17.5px;
+  line-height: 1.72;
   color: var(--ink);
   font-variant-numeric: oldstyle-nums;
   text-align: justify;
   hyphens: auto;
 }
+.tt-memo-body p { margin: 0 0 14px; }
 .tt-memo-body > p:first-of-type::first-letter,
 .tt-memo-body::first-letter {
   font-family: 'Fraunces', serif;
@@ -571,6 +596,23 @@ section[data-testid="stSidebar"] [data-testid="stDownloadButton"] > button:hover
   padding: 1px 5px;
   border-radius: 2px;
   color: var(--ink);
+}
+
+/* "Cited statutes" divider between memo and source cards */
+.tt-sources-divider {
+  display: flex; align-items: baseline; gap: 14px;
+  margin: 36px 0 6px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--ink);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+  font-variant-numeric: lining-nums;
+}
+.tt-sources-divider .tt-sources-count {
+  margin-left: auto; color: var(--accent); font-weight: 600;
 }
 
 /* ---------------- Empty / explainer cards ---------------- */

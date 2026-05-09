@@ -18,18 +18,80 @@ from dataclasses import dataclass
 
 JURISDICTION_ALIASES = {
     "ca":  "CA", "cal": "CA", "calif": "CA", "california": "CA",
-    "ny":  "NY", "new york": "NY",
-    "tx":  "TX", "texas": "TX",
-    "fl":  "FL", "florida": "FL",
-    "il":  "IL", "illinois": "IL",
+    "ny":  "NY", "n y": "NY", "new york": "NY",
+    "fl":  "FL", "fla": "FL", "florida": "FL",
     "ga":  "GA", "georgia": "GA",
     "oh":  "OH", "ohio": "OH",
+    # Parsed but not in the jurisdictions dropdown — judges may still cite them.
+    "tx":  "TX", "texas": "TX",
+    "il":  "IL", "illinois": "IL",
 }
 
+# Maps a normalized lowercase code phrase → canonical short code name.
+# Covers CA's 28 codes plus NY laws, FL, GA, OH conventions.
 CODE_ALIASES = {
-    "veh":     "Vehicle Code",
-    "vehicle": "Vehicle Code",
-    "vc":      "Vehicle Code",
+    # ---------- California (28 codes from leginfo.legislature.ca.gov) ----------
+    "veh": "Vehicle Code", "vehicle": "Vehicle Code", "vc": "Vehicle Code",
+    "pen": "Pen Code", "penal": "Pen Code", "pc": "Pen Code",
+    "civ": "Civ Code", "civil": "Civ Code", "cc": "Civ Code",
+    "ccp": "Code Civ Proc", "code civ proc": "Code Civ Proc",
+    "code of civil procedure": "Code Civ Proc",
+    "bpc": "Bus & Prof Code", "bus & prof": "Bus & Prof Code",
+    "business and professions": "Bus & Prof Code",
+    "business & professions": "Bus & Prof Code",
+    "hsc": "Health & Safety Code", "health & safety": "Health & Safety Code",
+    "health and safety": "Health & Safety Code",
+    "gov": "Gov Code", "government": "Gov Code",
+    "lab": "Lab Code", "labor": "Lab Code",
+    "wic": "Welf & Inst Code", "welf & inst": "Welf & Inst Code",
+    "welfare and institutions": "Welf & Inst Code",
+    "evid": "Evid Code", "evidence": "Evid Code",
+    "ins": "Ins Code", "insurance": "Ins Code",
+    "prob": "Prob Code", "probate": "Prob Code",
+    "fam": "Fam Code", "family": "Fam Code",
+    "edc": "Educ Code", "educ": "Educ Code", "education": "Educ Code",
+    "corp": "Corp Code", "corporations": "Corp Code",
+    "rtc": "Rev & Tax Code", "revenue and taxation": "Rev & Tax Code",
+    "puc": "Pub Util Code", "public utilities": "Pub Util Code",
+    "prc": "Pub Resources Code", "public resources": "Pub Resources Code",
+    "pcc": "Pub Cont Code", "public contract": "Pub Cont Code",
+    "shc": "Sts & Hwys Code", "streets & highways": "Sts & Hwys Code",
+    "streets and highways": "Sts & Hwys Code",
+    "wat": "Wat Code", "water": "Wat Code",
+    "com": "Com Code", "commercial": "Com Code",
+    "fin": "Fin Code", "financial": "Fin Code",
+    "fac": "Food & Agric Code", "food and agricultural": "Food & Agric Code",
+    "hnc": "Harb & Nav Code", "harbors and navigation": "Harb & Nav Code",
+    "mvc": "Mil & Vet Code", "military and veterans": "Mil & Vet Code",
+    "uic": "Unemp Ins Code", "unemployment insurance": "Unemp Ins Code",
+    "elec": "Elec Code", "elections": "Elec Code",
+
+    # ---------- New York ----------
+    "vat": "VAT", "vehicle and traffic": "VAT", "vehicle and traffic law": "VAT",
+    "penal law": "Penal Law", "pl": "Penal Law",
+    "cpl": "CPL", "criminal procedure": "CPL", "criminal procedure law": "CPL",
+    "cplr": "CPLR", "civil practice law and rules": "CPLR",
+    "gbl": "GBL", "general business law": "GBL",
+    "gol": "GOL", "general obligations law": "GOL",
+    "ins law": "Ins Law", "insurance law": "Ins Law",
+    "labor law": "Labor Law",
+    "phl": "PHL", "public health law": "PHL",
+    "tax law": "Tax Law",
+
+    # ---------- Florida (universal "Fla. Stat." prefix; chapter is in the section) ----------
+    "stat": "Fla. Stat.", "stat.": "Fla. Stat.",
+    "fla stat": "Fla. Stat.", "fla. stat.": "Fla. Stat.", "fla stat.": "Fla. Stat.",
+    "florida statutes": "Fla. Stat.",
+
+    # ---------- Georgia ----------
+    "code": "Code Ann.", "code ann": "Code Ann.", "code ann.": "Code Ann.",
+    "ga code": "Code Ann.", "ga code ann": "Code Ann.", "ga code ann.": "Code Ann.",
+
+    # ---------- Ohio ----------
+    "rev": "Rev. Code", "rev.": "Rev. Code",
+    "rev code": "Rev. Code", "rev. code": "Rev. Code",
+    "ohio rev code": "Rev. Code", "ohio rev. code": "Rev. Code",
+    "revised code": "Rev. Code", "revised": "Rev. Code",
 }
 
 DEFAULT_JURISDICTION = "CA"
@@ -51,8 +113,10 @@ _SECTION = r"\d+(?:\.\d+)?(?:-\d+)*[a-zA-Z]?"
 _SUBSEC = r"\([a-zA-Z](?:\)-\([a-zA-Z]\))?\)"
 _SECTION_AND_SUB = rf"(?P<section>{_SECTION})(?P<subsection>{_SUBSEC})?"
 
+# Multi-word codes ("Code Civ Proc", "Bus & Prof", "Vehicle and Traffic")
+# need to greedily eat up to "Code|Law|Stat|Ann|Statutes" before the section.
 _FULL_RE = re.compile(
-    rf"^\s*(?P<jur>[A-Za-z]+)\.?\s+(?P<code>[A-Za-z]+)\.?(?:\s+Code)?\s*§?\s*{_SECTION_AND_SUB}\s*$",
+    rf"^\s*(?P<jur>[A-Za-z]+)\.?\s+(?P<code>(?:[A-Za-z\.&]+\s*)+?)\s*(?:Code|Law|Statutes?|Stat\.?|Ann\.?)?\s*§?\s*{_SECTION_AND_SUB}\s*$",
     re.IGNORECASE,
 )
 
@@ -70,7 +134,7 @@ _BARE_SECTION_RE = re.compile(rf"^\s*§?\s*{_SECTION_AND_SUB}\s*$")
 
 
 def _norm(s: str) -> str:
-    return s.lower().strip().rstrip(".")
+    return re.sub(r"\s+", " ", s.lower().strip().rstrip("."))
 
 
 def parse(text: str) -> Citation | None:
@@ -97,13 +161,8 @@ def parse(text: str) -> Citation | None:
         if code:
             return Citation(DEFAULT_JURISDICTION, code, m.group("section"), m.group("subsection"))
 
-    m = _BARE_SECTION_RE.fullmatch(text)
+    m = _BARE_SECTION_RE.match(text)
     if m:
-        return Citation(
-            DEFAULT_JURISDICTION,
-            DEFAULT_CODE,
-            m.group("section"),
-            m.group("subsection"),
-        )
+        return Citation(DEFAULT_JURISDICTION, DEFAULT_CODE, m.group("section"), m.group("subsection"))
 
     return None
