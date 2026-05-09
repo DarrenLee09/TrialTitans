@@ -33,22 +33,50 @@ def _consume_chip_param() -> None:
             pass
 
 
-def render() -> tuple[str, str | None, bool]:
-    """Render hero. Returns (query, jurisdiction_code_or_none, use_ai)."""
+MODES = [
+    ("search", "Search statutes"),
+    ("case_file", "Build case file"),
+]
+
+
+def render() -> tuple[str, str | None, bool, str]:
+    """Render hero. Returns (query, jurisdiction_code_or_none, use_ai, mode)."""
     _consume_chip_param()
 
     if "_chip_pending" in st.session_state:
         st.session_state["query"] = st.session_state.pop("_chip_pending")
 
-    st.markdown('<div class="tt-hero-label">Search the record</div>', unsafe_allow_html=True)
+    mode_label = st.radio(
+        "Mode",
+        [label for _, label in MODES],
+        horizontal=True,
+        label_visibility="collapsed",
+        key="mode_label",
+    )
+    mode = next((m for m, label in MODES if label == mode_label), "search")
 
-    cols = st.columns([5, 2, 1.4])
+    hero_label = (
+        "Search the record" if mode == "search"
+        else "Describe the case — we'll build the file"
+    )
+    st.markdown(f'<div class="tt-hero-label">{hero_label}</div>', unsafe_allow_html=True)
+
+    placeholder = (
+        "Citation, factor, or describe the accident…" if mode == "search"
+        else "Describe the accident, client role, injuries, treatment, coverage…"
+    )
+
+    if mode == "case_file":
+        cols = st.columns([5, 2])
+    else:
+        cols = st.columns([5, 2, 1.4])
+
     with cols[0]:
         query = st.text_input(
             "Search",
             key="query",
             label_visibility="collapsed",
-            placeholder="Citation, factor, or describe the accident…",
+            placeholder=placeholder,
         )
     with cols[1]:
         juris_options = [("", "Any jurisdiction")] + _jurisdictions()
@@ -58,18 +86,23 @@ def render() -> tuple[str, str | None, bool]:
             label_visibility="collapsed",
         )
         jurisdiction = next((code for code, name in juris_options if name == jur_label), "") or None
-    with cols[2]:
-        use_ai = st.toggle(
-            "AI memo",
-            value=st.session_state.get("use_ai", False),
-            key="use_ai",
+
+    if mode == "case_file":
+        use_ai = True  # case-file mode always uses Claude
+    else:
+        with cols[2]:
+            use_ai = st.toggle(
+                "AI memo",
+                value=st.session_state.get("use_ai", False),
+                key="use_ai",
+            )
+
+    if mode == "search":
+        chips_html = "".join(
+            f'<a class="tt-chip" href="?q={quote(eg)}"><span class="tt-chip-eg-mark">{num}</span>{_html.escape(eg)}</a>'
+            for num, eg in EXAMPLE_QUERIES
         )
+        st.markdown('<div class="tt-chip-label">Try one</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="tt-chip-row">{chips_html}</div>', unsafe_allow_html=True)
 
-    chips_html = "".join(
-        f'<a class="tt-chip" href="?q={quote(eg)}"><span class="tt-chip-eg-mark">{num}</span>{_html.escape(eg)}</a>'
-        for num, eg in EXAMPLE_QUERIES
-    )
-    st.markdown('<div class="tt-chip-label">Try one</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="tt-chip-row">{chips_html}</div>', unsafe_allow_html=True)
-
-    return query, jurisdiction, use_ai
+    return query, jurisdiction, use_ai, mode
