@@ -33,6 +33,6 @@ def render_statutes_block(statutes: list[dict]) -> str:
     for s in statutes:
         cite = f"{s.get('jurisdiction', '?')} {s.get('code_name', '?')} § {s.get('section', '?')}"
         title = s.get("title") or ""
-        body = (s.get("body") or s.get("snippet") or "").strip()
+        body = (s.get("body") or s.get("full_text") or s.get("snippet") or "").strip()
         chunks.append(f"## {cite} — {title}\n{body}")
     return "\n\n".join(chunks) if chunks else "(none)"

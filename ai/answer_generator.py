@@ -42,5 +42,5 @@ def _offline_fallback(question: str, statutes: list[dict]) -> str:
     lines = [f"Question: {question}", "", "Top statutes:"]
     for s in statutes[:5]:
         cite = f"{s.get('jurisdiction')} {s.get('code_name')} § {s.get('section')}"
-        lines.append(f"- {cite}: {s.get('title') or (s.get('body') or '')[:120]}")
+        lines.append(f"- {cite}: {s.get('title') or (s.get('body') or s.get('full_text') or '')[:120]}")
     return "\n".join(lines)

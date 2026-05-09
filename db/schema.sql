@@ -103,3 +103,12 @@ CREATE TRIGGER IF NOT EXISTS statutes_au AFTER UPDATE ON statutes BEGIN
     INSERT INTO statute_fts(rowid, citation, title, full_text)
     VALUES (new.id, new.citation, COALESCE(new.title, ''), new.full_text);
 END;
+
+-- 3.8 Vector embeddings -------------------------------------------------------
+CREATE TABLE IF NOT EXISTS statute_embeddings (
+    statute_id  INTEGER PRIMARY KEY REFERENCES statutes(id) ON DELETE CASCADE,
+    embedding   BLOB NOT NULL,
+    model_name  TEXT NOT NULL DEFAULT 'all-MiniLM-L6-v2',
+    dims        INTEGER NOT NULL DEFAULT 384,
+    created_at  TEXT DEFAULT CURRENT_TIMESTAMP
+);

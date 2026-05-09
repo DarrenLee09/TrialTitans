@@ -7,3 +7,5 @@ db/legal_harvester.db
 db/*.db-journal
 .pytest_cache/
 .streamlit/secrets.toml
+.agents/
+skills-lock.json
