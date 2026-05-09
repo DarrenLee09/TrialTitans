@@ -1,0 +1,87 @@
+
+
+
+                                            
+  ---                                                                                       
+  Phase 0 — Pre-reqs (blocks everything)
+  [x] 1. Drop eval-ca-vehicle-code.csv into data/ (need from you)
+  [ ] 2. Set ANTHROPIC_API_KEY in .env
+  [ ] 3. Decide model: spec says claude-sonnet-4-20250514 but current code uses
+         claude-opus-4-7 — pick one and align ai/prompts.py + retrieval/reranker.py
+
+  Phase 1 — Schema alignment (~30 min)
+  [ ] 4. Rewrite db/schema.sql to match spec: add citation, is_verified, rename
+         factors→contributing_factors (with code/description/example_statutes), rename
+         join table statute_factor_tags (with confidence/tagged_by/tagged_at), add sources
+         table, expand statute_relationships
+  [ ] 5. Re-seed jurisdictions for CA/FL/NY/TX/IL/GA/OH (currently only 4)
+  [~] 6. Load the 17 factor codes from the eval CSV instead of the 8 currently hardcoded
+         in db/seed.py — IN PROGRESS: spec 2026-05-09-csv-ingestion-design.md auto-creates
+         factor rows from CSV labels at ingest time (preserves seeded 8, adds the rest).
+
+  Phase 2 — Ingest the eval floor (~45 min)
+  [~] 7. Rewrite harvester/ingest_csv.py for actual eval CSV columns; insert 41 CA
+         statutes + tag rows in statute_factor_tags — IN PROGRESS: design approved
+         2026-05-09, see docs/superpowers/specs/2026-05-09-csv-ingestion-design.md
+  [~] 8. Make tests/test_eval_coverage.py real — assert all 41 citations present —
+         IN PROGRESS: covered by same spec (assertion shape update + new test_ingest_csv.py)
+                                                                                            
+  Phase 3 — Multi-state scraping (~90 min, parallel with Phase 4)
+  [ ] 9. Per-state adapters in harvester/scrape_statutes.py: CA (leginfo), FL (flsenate),
+         NY (nysenate REST API), TX (capitol)
+  [ ] 10. Justia fallback module covering IL/GA/OH (one parser, three URL templates)
+  [ ] 11. harvester/validate_sources.py — HEAD every URL, set is_verified flag (don't
+          delete)
+
+  Phase 4 — Claude tagging (~60 min)
+  [ ] 12. JSON-mode classifier prompt in ai/prompts.py with all 17 factor codes
+  [ ] 13. Rewrite harvester/classify_factors.py: batch of 10, parse JSON, write
+          confidence/tagged_by='claude', cache by statute id so restarts don't re-spend
+          tokens
+  [ ] 14. Run on all ingested + scraped statutes
+  [x] 15. Rebuild FTS index (harvester/build_fts_index.py is already good) — DONE
+          2026-05-09: fixed external-content FTS5 bug (DELETE FROM → delete-all command),
+          rebuild verified.                      
+                                                                                            
+  Phase 5 — Retrieval upgrade (~45 min)
+  [ ] 16. Update retrieval/exact_lookup.py and factor_search.py to new schema
+          (jurisdiction_id, return tags)
+  [ ] 17. Harden retrieval/citation_parser.py for §23152, CA 23152, Veh. Code §23152
+  [ ] 18. NEW ai/query_interpreter.py — NL → {jurisdictions, factors, intent}
+  [ ] 19. Update retrieval/query_router.py to call interpreter for NL queries
+  [ ] 20. Add attorney explanation in retrieval/reranker.py
+
+  Phase 6 — Frontend rebuild (~90 min)
+  [ ] 21. Restructure frontend/ → app/ (or document the rename) and add app/main.py,
+          app/config.py
+  [ ] 22. Three-tab UI in search_bar.py: Citation / Factor / Natural Language
+  [ ] 23. Result card: factor badges, confidence score, expandable full text, source link
+  [ ] 24. Sidebar coverage panel: per-state statute count + % coverage
+
+  Phase 7 — Organizer extension (~60 min, scoring lever)
+  [ ] 25. Add cases + case_statutes tables (or session_state for v1)
+  [ ] 26. Workspace UI: save / tag (primary/supporting/background) / notes
+  [ ] 27. Gap detector: matrix of factors × states showing where coverage is missing
+  [ ] 28. Export workspace as CSV/Markdown
+
+  Phase 8 — Polish & demo (~45 min)
+  [~] 29. Make all tests pass (pytest) — IN PROGRESS: as of 2026-05-09 the suite is
+          6 passed / 1 skipped (eval-coverage skipped pending Phase 2 completion).
+  [ ] 30. Run URL validator end-to-end, fix or flag failures
+  [ ] 31. Update README with setup + demo flow
+  [ ] 32. Rehearse the 5-min demo (citation → factor → NL → organizer)
+
+  ---
+  Legend: [x] done   [~] in progress   [ ] not started
+  Session log 2026-05-09: project bootstrap (.venv + deps + db/seed) completed; FTS
+  rebuild bug fixed; ingestion design approved (see docs/superpowers/specs/).                          
+                                                                                            
+  ---                                                                                       
+  Critical-path order if you're solo: 1 → 4 → 7 → 12 → 13 → 16 → 22 → 27. Skip Phases 3     
+  (extra states), 4 (Claude tagging), and 7 (organizer) at your peril — they're where the   
+  points are.                                                                            
+                                                                                            
+  Schema rewrite is the biggest risk — it invalidates the seeded DB and every retrieval
+  module that uses jurisdiction text vs jurisdiction_id. Do it before anything else, then   
+  everything downstream uses the right shape.
+
