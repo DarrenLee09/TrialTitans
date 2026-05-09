@@ -661,6 +661,41 @@ section[data-testid="stSidebar"] [data-testid="stDownloadButton"] > button:hover
   line-height: 1.55;
 }
 
+/* ---------------- Case-file view ---------------- */
+.tt-case-summary {
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-card);
+  padding: 22px 24px;
+  background: var(--paper-deep);
+  margin: 16px 0 24px;
+}
+.tt-case-summary h3 {
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 10px;
+  color: var(--ink-soft);
+  margin: 0 0 8px;
+}
+.tt-case-summary p {
+  font-family: 'Newsreader', serif;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink);
+  margin: 0;
+  white-space: pre-wrap;
+}
+.tt-section-label {
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 10px;
+  color: var(--ink-soft);
+  margin: 26px 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--ink);
+}
+
 /* ---------------- Misc Streamlit overrides ---------------- */
 [data-testid="stHorizontalBlock"] { gap: 1.5rem; }
 [data-baseweb="input"] { background: transparent !important; }
