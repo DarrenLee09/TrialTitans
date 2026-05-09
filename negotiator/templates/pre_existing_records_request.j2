@@ -1,0 +1,57 @@
+{{ attorney_name }}
+{{ attorney_firm }}
+[Address]
+[City, State, ZIP]
+[Phone] | [Email]
+
+{{ today_date }}
+
+Records Custodian
+{{ provider_name }}
+[Address — verify provider address before sending]
+
+        RE:     Authorization for Release of Pre-Accident Medical Records
+                Patient:          {{ plaintiff_name }}
+                Record Period:    {{ pre_existing_start }} through {{ pre_existing_end }}
+                File No.:         {{ file_number }}
+
+Dear Records Custodian:
+
+Pursuant to the Health Insurance Portability and Accountability Act (HIPAA), 45 C.F.R.
+§ 164.508, and the enclosed Authorization for Release of Protected Health Information
+executed by {{ plaintiff_name }}, we hereby request the following records from your
+facility:
+
+1.  PRE-ACCIDENT MEDICAL RECORDS — All records for {{ plaintiff_name }} for the period
+    {{ pre_existing_start }} through {{ pre_existing_end }}, including:
+
+    (a) Records relating to any treatment of the spine, neck (cervical), lower back,
+        or lower extremities (including knees), including: intake documentation,
+        progress notes, diagnostic imaging, and discharge summaries;
+
+    (b) Records relating to any head injury, concussion, or neurological complaint,
+        including: evaluation notes, imaging, and follow-up documentation;
+
+    (c) Any notation in the record of prior accidents, trauma, or injuries relevant
+        to the above body regions.
+
+2.  SCOPE NOTE — This request is limited to records relevant to the body regions
+    identified above. We do not request records for conditions unrelated to the
+    musculoskeletal or neurological systems.
+
+This request is made in connection with a personal injury claim arising from an accident
+that occurred on {{ incident_date }}. These pre-accident records are sought to provide
+a complete medical history for {{ plaintiff_name }} and to document the baseline
+condition of the affected body regions prior to the accident.
+
+Please produce the requested records within thirty (30) days of receipt of this letter.
+If a fee for reproduction is required, please advise our office in writing before
+processing, and we will authorize payment.
+
+                                        Respectfully submitted,
+
+                                        {{ attorney_name }}
+                                        {{ attorney_firm }}
+
+Enclosure: HIPAA Authorization for Release of Protected Health Information,
+           signed by {{ plaintiff_name }}

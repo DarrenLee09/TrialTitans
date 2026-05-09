@@ -1,0 +1,162 @@
+[
+  {
+    "bucket": "coverage",
+    "field": "at_fault_policy_limits",
+    "leverage_tier": 1,
+    "closeable": "yes",
+    "closing_action": "Policy disclosure demand to GEICO adjuster Nakamura",
+    "status": "open"
+  },
+  {
+    "bucket": "coverage",
+    "field": "additional_defendants_check",
+    "leverage_tier": 1,
+    "closeable": "yes",
+    "closing_action": "Letter to Pacific Coast Plumbing requesting commercial policy disclosure under VC §17150; respondeat superior claim",
+    "status": "open"
+  },
+  {
+    "bucket": "coverage",
+    "field": "client_uim_coverage",
+    "leverage_tier": 1,
+    "closeable": "yes",
+    "closing_action": "Request UIM coverage information from Santos's own carrier State Farm",
+    "status": "open"
+  },
+  {
+    "bucket": "coverage",
+    "field": "umbrella_policy_check",
+    "leverage_tier": 2,
+    "closeable": "yes",
+    "closing_action": "Include umbrella policy inquiry in policy disclosure demands",
+    "status": "open"
+  },
+  {
+    "bucket": "coverage",
+    "field": "defendant_assets_check",
+    "leverage_tier": 2,
+    "closeable": "yes",
+    "closing_action": "Defer pending policy limit disclosure; run county recorder and CA SOS search",
+    "status": "open"
+  },
+  {
+    "bucket": "liability",
+    "field": "violation_evidence",
+    "leverage_tier": 1,
+    "closeable": "yes",
+    "closing_action": "Subpoena duces tecum to Harmon's wireless carrier for phone records covering 7:30–7:50 AM on 10/14/2025",
+    "status": "open"
+  },
+  {
+    "bucket": "liability",
+    "field": "violation_evidence",
+    "leverage_tier": 2,
+    "closeable": "conditional",
+    "closing_action": "Canvas businesses near intersection for camera footage; locate bystander",
+    "status": "open"
+  },
+  {
+    "bucket": "liability",
+    "field": "causation_chain",
+    "leverage_tier": 3,
+    "closeable": "yes",
+    "closing_action": "Engage accident reconstruction expert (vendor list)",
+    "status": "open"
+  },
+  {
+    "bucket": "liability",
+    "field": "defense_anticipation",
+    "leverage_tier": 3,
+    "closeable": "no",
+    "closing_action": "Attorney analysis — evaluate sudden emergency rebuttal",
+    "status": "open"
+  },
+  {
+    "bucket": "damages",
+    "field": "medical_expenses_past",
+    "leverage_tier": 1,
+    "closeable": "yes",
+    "closing_action": "HIPAA-compliant records and billing request to Coastal Rehab Physical Therapy",
+    "status": "open"
+  },
+  {
+    "bucket": "damages",
+    "field": "lost_wages_past",
+    "leverage_tier": 2,
+    "closeable": "yes",
+    "closing_action": "Wage verification letter to Qualcomm HR",
+    "status": "open"
+  },
+  {
+    "bucket": "damages",
+    "field": "medical_expenses_future",
+    "leverage_tier": 2,
+    "closeable": "yes",
+    "closing_action": "Future-care opinion request to treating physician Dr. A. Patel",
+    "status": "open"
+  },
+  {
+    "bucket": "damages",
+    "field": "non_economic_damages_basis",
+    "leverage_tier": 2,
+    "closeable": "conditional",
+    "closing_action": "Structured client interview and family testimonials",
+    "status": "open"
+  },
+  {
+    "bucket": "damages",
+    "field": "damages_comparables",
+    "leverage_tier": 2,
+    "closeable": "yes",
+    "closing_action": "Jury verdict reporter query — San Diego County, similar injuries",
+    "status": "open"
+  },
+  {
+    "bucket": "credibility",
+    "field": "pre_existing_conditions_disclosed",
+    "leverage_tier": 2,
+    "closeable": "yes",
+    "closing_action": "5-year pre-accident medical records request to treating providers",
+    "status": "open"
+  },
+  {
+    "bucket": "credibility",
+    "field": "prior_claims_history_checked",
+    "leverage_tier": 3,
+    "closeable": "yes",
+    "closing_action": "ISO ClaimSearch query",
+    "status": "open"
+  },
+  {
+    "bucket": "credibility",
+    "field": "treatment_gaps_addressed",
+    "leverage_tier": 3,
+    "closeable": "yes",
+    "closing_action": "Document insurance prior-auth email chain for 11-day ER-to-PT gap",
+    "status": "open"
+  },
+  {
+    "bucket": "credibility",
+    "field": "client_social_media_review",
+    "leverage_tier": 3,
+    "closeable": "yes",
+    "closing_action": "Public Instagram review by paralegal",
+    "status": "open"
+  },
+  {
+    "bucket": "credibility",
+    "field": "defendant_driving_history",
+    "leverage_tier": 3,
+    "closeable": "conditional",
+    "closing_action": "Court records search for prior citations and civil suits",
+    "status": "open"
+  },
+  {
+    "bucket": "credibility",
+    "field": "client_account_consistency",
+    "leverage_tier": 2,
+    "closeable": "no",
+    "closing_action": "Cross-check intake vs. ER notes vs. police report",
+    "status": "open"
+  }
+]

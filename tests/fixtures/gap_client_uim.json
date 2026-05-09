@@ -1,0 +1,8 @@
+{
+  "bucket": "coverage",
+  "field": "client_uim_coverage",
+  "leverage_tier": 1,
+  "closeable": "yes",
+  "closing_action": "Request UIM coverage information from Santos's own carrier State Farm",
+  "status": "open"
+}

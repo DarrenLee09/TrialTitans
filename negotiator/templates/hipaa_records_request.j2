@@ -1,0 +1,55 @@
+{{ attorney_name }}
+{{ attorney_firm }}
+
+{{ today_date }}
+
+Records Custodian
+{{ provider_name }}
+[Address — verify provider address before sending]
+
+        RE:     Authorization for Release of Medical Records and Billing
+                Patient:          {{ plaintiff_name }}
+                Date(s) of Service: {{ treatment_start }} through {{ treatment_end }}
+                File No.:         {{ file_number }}
+
+Dear Records Custodian:
+
+Pursuant to the Health Insurance Portability and Accountability Act (HIPAA), 45 C.F.R.
+§ 164.508, and the enclosed Authorization for Release of Protected Health Information
+executed by {{ plaintiff_name }}, we hereby request the following records from your
+facility:
+
+1.  MEDICAL RECORDS — Complete treatment records for {{ plaintiff_name }} for the period
+    {{ treatment_start }} through {{ treatment_end }}, including:
+
+    (a) Initial evaluation, intake documentation, and intake questionnaires;
+    (b) Progress notes for all treatment sessions within the requested period;
+    (c) Discharge summary and final treatment status notes, if applicable;
+    (d) Results of any diagnostic testing, imaging, or specialist referrals.
+
+2.  ITEMIZED BILLING — A complete itemized billing statement for all services rendered
+    during the above period, including for each line item:
+
+    (a) Date of service;
+    (b) CPT/procedure code and description;
+    (c) Amount charged;
+    (d) Amount billed to any insurance carrier and payments received.
+
+This request is made in connection with a personal injury claim arising from an accident
+that occurred on {{ incident_date }}. The records are necessary to document {{ plaintiff_name }}'s
+treatment and damages.
+
+Please produce the requested records within thirty (30) days of receipt of this letter.
+If a fee for reproduction is required, please advise our office in writing before
+processing, and we will authorize payment.
+
+If you have any questions or require additional documentation, please contact our office
+directly.
+
+                                        Respectfully submitted,
+
+                                        {{ attorney_name }}
+                                        {{ attorney_firm }}
+
+Enclosure: HIPAA Authorization for Release of Protected Health Information,
+           signed by {{ plaintiff_name }}

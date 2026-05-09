@@ -1,0 +1,8 @@
+{
+  "bucket": "liability",
+  "field": "causation_chain",
+  "leverage_tier": 3,
+  "closeable": "yes",
+  "closing_action": "Engage accident reconstruction expert (vendor list)",
+  "status": "open"
+}

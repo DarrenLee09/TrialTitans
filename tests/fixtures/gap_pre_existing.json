@@ -1,0 +1,8 @@
+{
+  "bucket": "credibility",
+  "field": "pre_existing_conditions_disclosed",
+  "leverage_tier": 2,
+  "closeable": "yes",
+  "closing_action": "5-year pre-accident medical records request to treating providers",
+  "status": "open"
+}

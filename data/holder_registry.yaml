@@ -1,0 +1,426 @@
+# Negotiator holder registry
+#
+# Maps Gap.field names to known data holders and outreach configurations.
+# All addresses and URLs are real and verifiable — no fabricated contacts.
+#
+# Fields per entry:
+#   outreach_type:      hipaa_records_request | policy_disclosure_demand |
+#                       subpoena_draft | wage_verification | foia | none
+#   holder_type:        insurance_carrier | medical_provider | employer |
+#                       wireless_carrier | government_agency | paywalled_database
+#   holder_name:        static name, OR omit and use holder_name_source
+#   holder_name_source: key in CaseProfile dict that holds the name at runtime
+#   holder_address:     mailing address (static, for government agencies)
+#   contact_url:        verifiable URL for the holder
+#   template:           Jinja2 template filename, or null for LLM/none
+#   engine:             template | llm | none
+#   llm_prompt_key:     key into llm_drafter.PROMPTS (when engine=llm)
+#   authority:          legal authority for the outreach
+#   paywalled:          true if holder requires subscription access
+#   caveats:            list of attorney-facing notes
+
+fields:
+
+  # ---------------------------------------------------------------------------
+  # BUCKET 2 — DAMAGES
+  # ---------------------------------------------------------------------------
+
+  medical_expenses_past:
+    outreach_type: hipaa_records_request
+    holder_type: medical_provider
+    holder_name_source: treating_providers   # list in CaseProfile; use first entry
+    template: hipaa_records_request.j2
+    engine: template
+    authority: "45 C.F.R. § 164.508 (HIPAA right to access and amend PHI)"
+    paywalled: false
+    caveats: []
+
+  lost_wages_past:
+    outreach_type: wage_verification
+    holder_type: employer
+    holder_name_source: plaintiff_employer
+    template: wage_verification.j2
+    engine: template
+    authority: "Standard employment verification; no statutory form required in CA"
+    paywalled: false
+    caveats: []
+
+  damages_comparables:
+    outreach_type: none
+    holder_type: paywalled_database
+    holder_name: "Jury verdict databases (subscription required)"
+    template: null
+    engine: none
+    authority: null
+    paywalled: true
+    caveats:
+      - >-
+        Jury verdict databases are subscription-only. Standard sources for
+        California PI comparables are Westlaw Verdict Reporter
+        (legal.thomsonreuters.com/en/products/westlaw) and JuryVerdicts.net
+        (juryverdicts.net).
+    known_holders:
+      - name: "Westlaw Verdict Reporter"
+        url: "https://legal.thomsonreuters.com/en/products/westlaw"
+      - name: "JuryVerdicts.net"
+        url: "https://www.juryverdicts.net/"
+
+  # ---------------------------------------------------------------------------
+  # BUCKET 3 — COVERAGE
+  # ---------------------------------------------------------------------------
+
+  at_fault_policy_limits:
+    outreach_type: policy_disclosure_demand
+    holder_type: insurance_carrier
+    holder_name_source: at_fault_carrier
+    template: null
+    engine: llm
+    llm_prompt_key: personal_policy_demand
+    authority: >-
+      Cal. Ins. Code § 791.13; Crisci v. Security Insurance Co. (1967)
+      66 Cal.2d 425; Comunale v. Traders & General Insurance (1958) 50 Cal.2d 654
+    paywalled: false
+    caveats: []
+
+  additional_defendants_check:
+    outreach_type: policy_disclosure_demand
+    holder_type: employer
+    holder_name_source: defendant_employer
+    template: null
+    engine: llm
+    llm_prompt_key: commercial_policy_demand
+    authority: >-
+      Cal. Veh. Code § 17150 (vehicle owner liability for permissive use);
+      respondeat superior — Perez v. Van Groningen & Sons (1986) 41 Cal.3d 962
+    paywalled: false
+    caveats: []
+
+  # ---------------------------------------------------------------------------
+  # BUCKET 1 — LIABILITY  (subtype-routed from violation_evidence)
+  # registry.py keyword-matches closing_action to resolve this subtype key
+  # ---------------------------------------------------------------------------
+
+  "violation_evidence.phone_records":
+    outreach_type: subpoena_draft
+    holder_type: wireless_carrier
+    holder_name: "[CARRIER NAME]"
+    template: phone_records_subpoena.j2
+    engine: template
+    authority: "Cal. Code Civ. Proc. § 1985 (subpoena duces tecum)"
+    paywalled: false
+    caveats:
+      - >-
+        A civil subpoena under CCP § 1985 requires a filed lawsuit and an
+        active case number. If the case is pre-litigation, consider sending a
+        voluntary evidence preservation demand to defendant's counsel requesting
+        that Harmon preserve all phone records from the incident date instead.
+      - >-
+        Once Harmon's wireless carrier is identified through discovery or
+        voluntary disclosure, substitute [CARRIER NAME] and [CARRIER ADDRESS].
+        Known major carrier legal compliance addresses:
+        AT&T — AT&T Wireless, National Compliance Center,
+        11760 US Highway 1, North Palm Beach, FL 33408
+        (att.com/help/subpoena.html);
+        Verizon — Verizon, Law Enforcement Resource Team,
+        180 Washington Valley Road, Bedminster, NJ 07921
+        (verizon.com/about/privacy/law-enforcement-resource-guide);
+        T-Mobile — T-Mobile Legal Department,
+        12920 SE 38th St, Bellevue, WA 98006
+        (t-mobile.com/privacy-center/education-and-resources/law-enforcement-guide).
+
+  # ---------------------------------------------------------------------------
+  # BUCKET 4 — CREDIBILITY
+  # ---------------------------------------------------------------------------
+
+  prior_claims_history_checked:
+    outreach_type: none
+    holder_type: paywalled_database
+    holder_name: "ISO ClaimSearch (Verisk)"
+    template: null
+    engine: none
+    authority: null
+    contact_url: "https://www.verisk.com/insurance/products/iso-claimsearch/"
+    paywalled: true
+    caveats:
+      - >-
+        ISO ClaimSearch is a subscription service available to member
+        insurance companies and credentialed law firms. Contact Verisk at
+        verisk.com/insurance/products/iso-claimsearch/ for access options.
+        Defense attorneys routinely run this check; plaintiff attorneys should
+        obtain it proactively to anticipate defense challenges.
+
+  defendant_driving_history:
+    outreach_type: foia
+    holder_type: government_agency
+    holder_name: "California Department of Motor Vehicles"
+    holder_address: >-
+      California DMV, Office of Information Services,
+      P.O. Box 942869, Sacramento, CA 94269-0001
+    contact_url: "https://www.dmv.ca.gov/portal/driver-licenses-id-cards/driver-records/"
+    template: dmv_record_request.j2
+    engine: template
+    authority: >-
+      Cal. Veh. Code § 1808 (public records);
+      Driver's Privacy Protection Act, 18 U.S.C. § 2721(b)(4) —
+      permissible purpose: use in connection with litigation
+    paywalled: false
+    caveats:
+      - >-
+        California DMV driving records are restricted under the federal
+        Driver's Privacy Protection Act (DPPA, 18 U.S.C. § 2721). Permissible
+        purposes include use in connection with civil litigation
+        (18 U.S.C. § 2721(b)(4)). An INF 1125 form and applicable fee
+        (verify current amount at dmv.ca.gov) are required.
+
+  # ---------------------------------------------------------------------------
+  # BUCKET 3 — COVERAGE (additional entries)
+  # ---------------------------------------------------------------------------
+
+  client_uim_coverage:
+    outreach_type: policy_disclosure_demand
+    holder_type: insurance_carrier
+    holder_name_source: plaintiff_carrier
+    template: null
+    engine: llm
+    llm_prompt_key: uim_coverage_demand
+    authority: "Cal. Ins. Code § 11580.2 (mandatory uninsured/underinsured motorist coverage)"
+    paywalled: false
+    caveats:
+      - >-
+        UIM claim triggers only if defendant's bodily injury policy limits are
+        insufficient to fully compensate plaintiff's damages. Confirm the
+        at-fault carrier's policy limits before tendering a UIM demand to
+        plaintiff's own carrier.
+
+  umbrella_policy_check:
+    outreach_type: none
+    holder_type: insurance_carrier
+    holder_name: "Umbrella carrier (unknown — inquire via existing demands)"
+    template: null
+    engine: none
+    authority: null
+    paywalled: false
+    requires_human_followup: true
+    caveats:
+      - >-
+        Umbrella policy inquiry should be added to the policy disclosure demands
+        already sent to the defendant's carriers. Ask each respondent:
+        (a) whether any umbrella or excess policy was in effect on the incident
+        date; (b) to identify any umbrella carrier, policy number, and limits.
+        No stand-alone umbrella carrier is known at this stage.
+
+  defendant_assets_check:
+    outreach_type: foia
+    holder_type: government_agency
+    holder_name: "County Recorder / CA Secretary of State"
+    holder_address: null
+    contact_url: "https://bizfile.sos.ca.gov/"
+    template: defendant_assets_public_records.j2
+    engine: template
+    authority: >-
+      Cal. Gov't Code § 27201 (county recorder public records);
+      CA Secretary of State business entity records (bizfile.sos.ca.gov)
+    paywalled: false
+    caveats:
+      - >-
+        Look up the correct County Recorder address at the county's official
+        website before sending. San Diego County: San Diego County Assessor/
+        Recorder/County Clerk, 1600 Pacific Hwy, Room 103, San Diego CA 92101
+        (sdarcc.sdcounty.ca.gov).
+      - >-
+        Run a CA Secretary of State business entity search at bizfile.sos.ca.gov
+        to obtain defendant's registered business addresses and agent of service
+        for process, if defendant operates a business entity.
+      - >-
+        Consider deferring this search until policy limits are disclosed; if
+        limits are adequate to cover damages, a separate asset investigation
+        may be unnecessary.
+
+  # ---------------------------------------------------------------------------
+  # BUCKET 1 — LIABILITY (additional subtype + causation)
+  # ---------------------------------------------------------------------------
+
+  "violation_evidence.camera_footage":
+    outreach_type: foia
+    holder_type: government_agency
+    holder_name: "[CITY/COUNTY TRAFFIC OPERATIONS — verify]"
+    holder_address: null
+    contact_url: null
+    template: traffic_camera_foia.j2
+    engine: template
+    authority: "Cal. Gov't Code § 6250 et seq. (California Public Records Act / CPRA)"
+    paywalled: false
+    caveats:
+      - >-
+        Address the CPRA request to the City Clerk or Public Records Officer
+        of the city where the intersection is located. Verify the correct
+        address at the city's official website before sending.
+      - >-
+        Traffic camera footage is typically retained for 30–72 hours before
+        automatic overwrite. If more than a few days have passed since the
+        incident, lead with an evidence preservation demand rather than a
+        records production request.
+      - >-
+        Also send written requests to businesses adjacent to the intersection
+        asking them to voluntarily preserve and produce any private security
+        or CCTV footage. These are not subject to CPRA but businesses often
+        comply with a professional letter request.
+
+  causation_chain:
+    outreach_type: generic
+    holder_type: expert_witness
+    holder_name: "[RECONSTRUCTION EXPERT FIRM — attorney selects]"
+    contact_url: "https://www.actar.org/"
+    template: null
+    engine: llm
+    llm_prompt_key: expert_engagement_letter
+    authority: >-
+      Cal. Code Civ. Proc. § 2034 (expert witness designation);
+      engagement is initially as consulting expert; designate as testifying
+      expert only after evaluating preliminary findings
+    paywalled: false
+    requires_human_followup: true
+    caveats:
+      - >-
+        Select a credentialed ACTAR-member reconstructionist (directory at
+        actar.org). Real California-licensed firms: Robson Forensic, Inc.
+        (robsonforensic.com); Exponent, Inc. — California-licensed engineers
+        (exponent.com); Baker Engineering and Risk Consultants (bakerrisk.com).
+      - >-
+        This engagement creates a consulting-expert relationship. Formally
+        designate under CCP § 2034.210 before trial testimony only after
+        evaluating preliminary findings. Work-product protection applies to
+        communications with consulting experts not designated to testify
+        (Cal. Code Civ. Proc. § 2018.030).
+
+  # ---------------------------------------------------------------------------
+  # BUCKET 2 — DAMAGES (additional entries)
+  # ---------------------------------------------------------------------------
+
+  medical_expenses_future:
+    outreach_type: generic
+    holder_type: medical_provider
+    holder_name_source: treating_providers
+    template: future_care_opinion_request.j2
+    engine: template
+    authority: >-
+      Professional letter requesting treating physician's written future-care
+      opinion; future damages quantification required for Cal. Code Civ.
+      Proc. § 998 offer preparation
+    paywalled: false
+    caveats:
+      - >-
+        If the treating physician declines to provide a written future-care
+        opinion or life-care plan, consider retaining a separate life-care
+        planning expert or physiatrist for a functional capacity evaluation.
+
+  # ---------------------------------------------------------------------------
+  # BUCKET 4 — CREDIBILITY (additional entry)
+  # ---------------------------------------------------------------------------
+
+  pre_existing_conditions_disclosed:
+    outreach_type: hipaa_records_request
+    holder_type: medical_provider
+    holder_name_source: treating_providers
+    template: pre_existing_records_request.j2
+    engine: template
+    authority: "45 C.F.R. § 164.508 (HIPAA right to access protected health information)"
+    paywalled: false
+    caveats:
+      - >-
+        Send to all treating providers identified by client for the 5-year
+        pre-accident period. This entry uses treating_providers[0]; instruct
+        client to identify any additional providers who treated the same body
+        regions (spine, lower back, cervical, knee) and send separate letters
+        to each.
+      - >-
+        Scope the request to body regions at issue in this claim to limit
+        objections. Do not request records for completely unrelated conditions.
+
+  # ---------------------------------------------------------------------------
+  # INTERNAL TASKS (Category C) — engine: none, no artifact drafted
+  # These gaps require attorney or paralegal action, not third-party outreach.
+  # ---------------------------------------------------------------------------
+
+  defense_anticipation:
+    outreach_type: none
+    holder_type: unidentified
+    holder_name: null
+    template: null
+    engine: none
+    authority: null
+    paywalled: false
+    caveats:
+      - >-
+        Attorney analysis required: evaluate whether the sudden emergency
+        doctrine (CACI 452) applies. In California, sudden emergency requires
+        an unforeseeable emergency not of the defendant's own making.
+        Defendant's own citations for speeding (VC 22350) and running a red
+        light (VC 21453(a)) make it unlikely that any resulting emergency was
+        unforeseeable. Address this theory proactively in the demand letter.
+
+  client_account_consistency:
+    outreach_type: none
+    holder_type: unidentified
+    holder_name: null
+    template: null
+    engine: none
+    authority: null
+    paywalled: false
+    caveats:
+      - >-
+        Internal cross-check: compare plaintiff's intake narrative against
+        (a) ER notes, (b) the responding officer's police report narrative,
+        and (c) plaintiff's subsequent declarations. Identify any
+        inconsistencies in mechanism of injury, symptom onset, or timeline
+        before the demand letter is finalized.
+
+  non_economic_damages_basis:
+    outreach_type: none
+    holder_type: unidentified
+    holder_name: null
+    template: null
+    engine: none
+    authority: null
+    paywalled: false
+    caveats:
+      - >-
+        Internal task: conduct a structured client interview to document pain,
+        suffering, loss of enjoyment of life, and impact on daily activities
+        since the accident. Obtain declarations from family members or close
+        friends who can attest to changes in plaintiff's functional capacity
+        and quality of life. Review public social media for posts inconsistent
+        with claimed limitations (see also client_social_media_review).
+
+  treatment_gaps_addressed:
+    outreach_type: none
+    holder_type: unidentified
+    holder_name: null
+    template: null
+    engine: none
+    authority: null
+    paywalled: false
+    caveats:
+      - >-
+        Internal task: obtain the client's insurance prior-authorization email
+        chain and place it in the file. Prepare a written timeline documenting:
+        ER discharge → prior-auth request date → prior-auth approval date →
+        PT start date. This rebuttal to any treatment gap must be included in
+        the demand letter to prevent the defense from exploiting it as evidence
+        of minor injury.
+
+  client_social_media_review:
+    outreach_type: none
+    holder_type: unidentified
+    holder_name: null
+    template: null
+    engine: none
+    authority: null
+    paywalled: false
+    caveats:
+      - >-
+        Internal task: paralegal to review plaintiff's public social media
+        accounts. Document any posts from the period of claimed injury through
+        present that depict physical activity, travel, or other conduct
+        inconsistent with claimed injuries. Flag any such posts for attorney
+        review before the demand is sent.

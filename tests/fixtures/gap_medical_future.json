@@ -1,0 +1,8 @@
+{
+  "bucket": "damages",
+  "field": "medical_expenses_future",
+  "leverage_tier": 2,
+  "closeable": "yes",
+  "closing_action": "Future-care opinion request to treating physician Dr. A. Patel",
+  "status": "open"
+}

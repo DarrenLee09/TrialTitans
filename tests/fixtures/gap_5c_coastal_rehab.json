@@ -1,0 +1,8 @@
+{
+  "bucket": "damages",
+  "field": "medical_expenses_past",
+  "leverage_tier": 1,
+  "closeable": "yes",
+  "closing_action": "HIPAA-compliant records and billing request to Coastal Rehab Physical Therapy",
+  "status": "open"
+}

@@ -1,0 +1,8 @@
+{
+  "bucket": "liability",
+  "field": "violation_evidence",
+  "leverage_tier": 2,
+  "closeable": "conditional",
+  "closing_action": "Canvas businesses near intersection for camera footage; locate bystander",
+  "status": "open"
+}

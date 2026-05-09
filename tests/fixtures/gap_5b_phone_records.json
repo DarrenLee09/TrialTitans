@@ -1,0 +1,8 @@
+{
+  "bucket": "liability",
+  "field": "violation_evidence",
+  "leverage_tier": 1,
+  "closeable": "yes",
+  "closing_action": "Subpoena duces tecum to Harmon's wireless carrier for phone records covering 7:30–7:50 AM on 10/14/2025",
+  "status": "open"
+}

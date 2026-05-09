@@ -1,0 +1,31 @@
+{
+  "plaintiff_name": "Maria Santos",
+  "plaintiff_employer": "Qualcomm",
+  "defendant_name": "Robert Harmon",
+  "defendant_employer": "Pacific Coast Plumbing, Inc.",
+  "defendant_vehicle": "2023 Ford Transit work van (marked Pacific Coast Plumbing, Inc.)",
+  "incident_date": "October 14, 2025",
+  "incident_location": "Mission Blvd & Garnet Ave, San Diego, CA",
+  "at_fault_carrier": "GEICO",
+  "at_fault_claim_number": "GEC-2025-9924411",
+  "at_fault_adjuster": "K. Nakamura",
+  "treating_providers": ["Coastal Rehab Physical Therapy"],
+  "treatment_date_ranges": [
+    {
+      "provider": "Coastal Rehab Physical Therapy",
+      "start": "10/25/2025",
+      "end": "12/20/2025"
+    }
+  ],
+  "injuries": ["concussion", "cervical strain", "right knee contusion with bone bruise"],
+  "statutes_cited": ["CVC 22350", "CVC 21453(a)", "CVC 23123.5"],
+  "jurisdiction": "CA",
+  "county": "San Diego",
+  "file_number": "2026-0341",
+  "attorney_name": "J. Liu",
+  "attorney_firm": "[LAW FIRM NAME]",
+  "missed_work_start": "10/14/2025",
+  "missed_work_end": "11/19/2025",
+  "mmi_date": "March 15, 2026",
+  "plaintiff_carrier": "State Farm"
+}

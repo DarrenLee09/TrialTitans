@@ -1,0 +1,55 @@
+{{ attorney_name }}
+{{ attorney_firm }}
+[Address]
+[City, State, ZIP]
+[Phone] | [Email]
+
+{{ today_date }}
+
+Human Resources Department
+{{ employer_name }}
+[Address]
+[City, State, ZIP]
+
+        RE:     Employment and Wage Verification — {{ plaintiff_name }}
+                Date of Accident:  {{ incident_date }}
+                File No.:          {{ file_number }}
+
+Dear Human Resources Representative:
+
+We represent {{ plaintiff_name }}, who is currently employed or was employed by
+{{ employer_name }}, in connection with a personal injury claim arising from an
+accident on {{ incident_date }}. To document {{ plaintiff_name }}'s economic damages,
+we write to request verification of the following information:
+
+    1.  EMPLOYMENT STATUS: {{ plaintiff_name }}'s job title and employment status
+        (full-time / part-time / other) as of {{ incident_date }}.
+
+    2.  RATE OF PAY: {{ plaintiff_name }}'s regular rate of compensation (hourly rate,
+        annual salary, or equivalent) as of {{ incident_date }}.
+
+    3.  MISSED WORK PERIOD: The number of days and hours {{ plaintiff_name }} was
+        absent from work between {{ missed_work_start }} and {{ missed_work_end }},
+        including any period of partial return to work.
+
+    4.  WAGES LOST: The gross wages {{ plaintiff_name }} would have earned during the
+        above period but for the absence, broken out by any period of full versus
+        partial absence.
+
+    5.  BENEFITS RECEIVED: Whether {{ plaintiff_name }} received any sick leave, paid
+        time off, disability benefits, or other compensation during the above period,
+        and if so, the amounts received.
+
+A signed authorization from {{ plaintiff_name }} permitting disclosure of this
+information is enclosed.
+
+Please provide the requested information in writing within thirty (30) days of receipt
+of this letter. If you have any questions, please contact our office directly.
+
+                                        Respectfully submitted,
+
+                                        {{ attorney_name }}
+                                        {{ attorney_firm }}
+
+Enclosure: Employee Authorization for Disclosure of Employment and Wage Information,
+           signed by {{ plaintiff_name }}

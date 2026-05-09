@@ -1,0 +1,53 @@
+{{ attorney_name }}
+{{ attorney_firm }}
+[Address]
+[City, State, ZIP]
+[Phone] | [Email]
+
+{{ today_date }}
+
+{{ county }} County Assessor/Recorder/County Clerk
+[RECORDER ADDRESS — verify at county's official website]
+[City, State, ZIP]
+
+        RE:     Public Records Request — Real Property Ownership Search
+                Subject:  {{ defendant_name }}
+                File No.: {{ file_number }}
+
+To Whom It May Concern:
+
+Pursuant to California Government Code § 27201, we hereby request inspection and
+copies of all publicly available real property ownership records for the following
+individual:
+
+        Full Name:     {{ defendant_name }}
+        County:        {{ county }} County, California
+
+RECORDS REQUESTED:
+
+    1.  All deeds (grant deeds, quitclaim deeds, trust deeds) recorded in the name
+        of {{ defendant_name }} as grantor or grantee in {{ county }} County;
+
+    2.  Any deed of trust, mortgage, or lien recorded against real property owned
+        by {{ defendant_name }} in {{ county }} County;
+
+    3.  Any notice of default, notice of trustee's sale, or lis pendens recorded
+        in the name of {{ defendant_name }}.
+
+This request is made in connection with a civil matter arising from an incident on
+{{ incident_date }}.
+
+Please advise as to any fee required for copying or certification. We request a
+response within the timeframe required under applicable law.
+
+                                        Respectfully submitted,
+
+                                        {{ attorney_name }}
+                                        {{ attorney_firm }}
+
+---
+
+NOTE TO ATTORNEY: In addition to this county recorder request, run a California
+Secretary of State business entity search at bizfile.sos.ca.gov to identify any
+business entities owned or controlled by {{ defendant_name }}, which may hold assets
+or be subject to a judgment lien. See caveats in the OutreachPlan for further detail.
