@@ -547,7 +547,7 @@ section[data-testid="stSidebar"] [data-testid="stDownloadButton"] > button:hover
   color: #B42318 !important;
 }
 
-/* ---------------- AI memo rail ---------------- */
+/* ---------------- AI memo (answer-first layout) ---------------- */
 .tt-memo {
   position: sticky;
   top: 24px;

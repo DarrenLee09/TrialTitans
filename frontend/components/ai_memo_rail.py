@@ -99,7 +99,7 @@ def render(query: str, results: list[dict], jurisdiction: str | None) -> None:
         '<div class="tt-memo">'
         '<div class="tt-memo-eyebrow">AI memo</div>'
         '<h2>Memorandum</h2>'
-        f'<div class="tt-memo-byline">Re: <em>{safe_query}</em> &middot; {juris_label}</div>'
+        f'<div class="tt-memo-byline">Re: <em>{safe_query}</em> &middot; {juris_label} &middot; sources cited inline</div>'
         f'<div class="tt-memo-body">{body_html}</div>'
         '</div>'
     )

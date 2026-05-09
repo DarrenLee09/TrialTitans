@@ -1,4 +1,4 @@
-"""Exact SQL lookup by (jurisdiction, section)."""
+"""Exact SQL lookup by (jurisdiction, section [+ subsection])."""
 from __future__ import annotations
 
 from db.seed import connect
@@ -23,11 +23,12 @@ _SELECT = """
 def lookup(citation: Citation) -> dict | None:
     """Return the matching statute dict or None.
 
-    Tries the user-supplied section_number first (e.g. "2800.1(a)").
-    If nothing matches and the user supplied a subsection, falls back to the
-    bare section. If they supplied no subsection, falls back to the first
-    "<section>(...)"-style row, since CSVs sometimes only carry the
-    fully-qualified section_number.
+    Strategy:
+      1. Try `<section>(<subsection>)` exactly (e.g. "2800.1(a)").
+      2. Fall back to bare `<section>` if a subsection was supplied.
+      3. If no subsection was supplied, also try matching `<section>(...)`
+         since some sources only carry the fully-qualified form.
+    Then attaches contributing-factor tags so the result row is feature-complete.
     """
     full_section = citation.section + (citation.subsection or "")
     with connect() as conn:

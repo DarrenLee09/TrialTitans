@@ -7,6 +7,10 @@ import streamlit as st
 
 
 def _citation(s: dict) -> str:
+    # Prefer the canonical citation stored on the row — written by the scraper
+    # with the proper code prefix. Fall back to assembling from joined columns.
+    if s.get("citation"):
+        return s["citation"]
     return f"{s.get('jurisdiction', '?')} {s.get('code_name', '?')} § {s.get('section', '?')}"
 
 
@@ -33,8 +37,23 @@ def _excerpt(s: dict) -> str:
     return _html.escape(body[:420] + ("…" if len(body) > 420 else ""))
 
 
+def _source_domain(url: str) -> str:
+    from urllib.parse import urlparse
+    try:
+        return urlparse(url).netloc or url
+    except Exception:
+        return url
+
+
+def _live_badge(statute: dict) -> str:
+    if not statute.get("is_live_fetch"):
+        return ""
+    domain = _html.escape(_source_domain(statute.get("source_url") or ""))
+    return f'<span class="tt-live-badge"><span class="tt-live-dot"></span>Live · {domain}</span>'
+
+
 def render(statute: dict) -> None:
-    sid = statute.get("id", "x")
+    sid = statute.get("id") or f"live-{abs(hash(statute.get('citation',''))) & 0xffff:x}"
     cite = _html.escape(_citation(statute))
     title = _html.escape(statute.get("title") or "")
     excerpt = _excerpt(statute)
@@ -44,6 +63,7 @@ def render(statute: dict) -> None:
         f'<div class="tt-card-source"><a href="{_html.escape(source_url)}" target="_blank" rel="noreferrer">View source <span aria-hidden="true">→</span></a></div>'
         if source_url else ""
     )
+    live_html = _live_badge(statute)
     explanation = (statute.get("explanation") or "").strip()
     explanation_html = (
         f'<div class="tt-card-rationale"><strong>Why this matters:</strong> {_html.escape(explanation)}</div>'
@@ -54,6 +74,7 @@ def render(statute: dict) -> None:
         f'<div class="tt-card" id="statute-{sid}">'
         f'<div class="tt-card-meta">'
         f'<span class="tt-citation">{cite}</span>'
+        f'{live_html}'
         f'<span class="tt-meta-spacer"></span>'
         f'</div>'
         f'<h3 class="tt-card-title">{title}</h3>'
