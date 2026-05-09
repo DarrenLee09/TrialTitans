@@ -14,7 +14,7 @@ from ai.prompts import (
     render_statutes_block,
 )
 
-MODEL = "claude-opus-4-7"
+MODEL = "claude-sonnet-4-6"
 
 
 def answer(question: str, statutes: list[dict], jurisdiction: str | None = None) -> str:

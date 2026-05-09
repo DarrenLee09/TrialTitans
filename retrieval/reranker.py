@@ -9,7 +9,7 @@ try:
 except ImportError:  # anthropic SDK is optional at runtime
     Anthropic = None  # type: ignore
 
-MODEL = "claude-opus-4-7"
+MODEL = "claude-sonnet-4-6"
 
 
 def rerank(query: str, candidates: list[dict], top_k: int = 5) -> list[dict]:

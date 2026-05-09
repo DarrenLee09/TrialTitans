@@ -1,6 +1,44 @@
 [
-  { "code": "CA", "name": "California", "country": "US" },
-  { "code": "NY", "name": "New York",    "country": "US" },
-  { "code": "TX", "name": "Texas",       "country": "US" },
-  { "code": "FL", "name": "Florida",     "country": "US" }
+  {
+    "code": "CA",
+    "name": "California",
+    "statute_title": "California Vehicle Code",
+    "base_url": "https://leginfo.legislature.ca.gov/faces/codes_displayexpandedbranch.xhtml?tocCode=VEH"
+  },
+  {
+    "code": "FL",
+    "name": "Florida",
+    "statute_title": "Florida Statutes — Chapter 316 (Uniform Traffic Control)",
+    "base_url": "https://www.flsenate.gov/Laws/Statutes/2024/Chapter316"
+  },
+  {
+    "code": "NY",
+    "name": "New York",
+    "statute_title": "New York Vehicle and Traffic Law",
+    "base_url": "https://www.nysenate.gov/legislation/laws/VAT"
+  },
+  {
+    "code": "TX",
+    "name": "Texas",
+    "statute_title": "Texas Transportation Code",
+    "base_url": "https://statutes.capitol.texas.gov/Docs/TN/htm/TN.545.htm"
+  },
+  {
+    "code": "IL",
+    "name": "Illinois",
+    "statute_title": "Illinois Vehicle Code (625 ILCS 5)",
+    "base_url": "https://law.justia.com/codes/illinois/chapter-625/"
+  },
+  {
+    "code": "GA",
+    "name": "Georgia",
+    "statute_title": "Georgia Code Title 40 — Motor Vehicles and Traffic",
+    "base_url": "https://law.justia.com/codes/georgia/title-40/"
+  },
+  {
+    "code": "OH",
+    "name": "Ohio",
+    "statute_title": "Ohio Revised Code Title 45 — Motor Vehicles",
+    "base_url": "https://law.justia.com/codes/ohio/title-45/"
+  }
 ]
