@@ -3,8 +3,6 @@ from __future__ import annotations
 
 import streamlit as st
 
-_INJECTED_KEY = "_tt_styles_injected"
-
 _CSS = """
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -133,8 +131,8 @@ p, li { font-family: 'Newsreader', serif; }
   margin: 6px 0 8px;
 }
 
-/* Scope text input + selectbox styling to the hero region */
-.tt-hero-scope ~ div [data-testid="stTextInput"] input {
+/* Text input (only one in main area — the hero search) */
+section.main [data-testid="stTextInput"] input {
   font-family: 'Fraunces', serif !important;
   font-size: 22px !important;
   font-weight: 500 !important;
@@ -146,19 +144,19 @@ p, li { font-family: 'Newsreader', serif; }
   padding: 0 18px !important;
   letter-spacing: -0.005em !important;
 }
-.tt-hero-scope ~ div [data-testid="stTextInput"] input::placeholder {
+section.main [data-testid="stTextInput"] input::placeholder {
   color: var(--ink-faint) !important;
   font-style: italic !important;
   font-weight: 400 !important;
 }
-.tt-hero-scope ~ div [data-testid="stTextInput"] input:focus {
+section.main [data-testid="stTextInput"] input:focus {
   border-color: var(--accent) !important;
   outline: 3px solid var(--accent-haze) !important;
   outline-offset: 0 !important;
 }
 
-/* Selectbox in hero row */
-.tt-hero-scope ~ div [data-testid="stSelectbox"] > div > div {
+/* Selectbox (only one in main area — jurisdiction) */
+section.main [data-testid="stSelectbox"] > div > div {
   background: var(--paper-deep) !important;
   border: 1px solid var(--ink) !important;
   border-radius: var(--radius-card) !important;
@@ -167,11 +165,11 @@ p, li { font-family: 'Newsreader', serif; }
   font-size: 14px !important;
   color: var(--ink) !important;
 }
-.tt-hero-scope ~ div [data-testid="stSelectbox"] svg { color: var(--ink) !important; }
+section.main [data-testid="stSelectbox"] svg { color: var(--ink) !important; }
 
 /* AI toggle in hero row */
-.tt-hero-scope ~ div [data-testid="stToggle"] { margin-top: 22px; }
-.tt-hero-scope ~ div [data-testid="stToggle"] label {
+section.main [data-testid="stToggle"] { margin-top: 18px; }
+section.main [data-testid="stToggle"] label {
   font-family: 'JetBrains Mono', monospace !important;
   text-transform: uppercase !important;
   letter-spacing: 0.16em !important;
@@ -179,37 +177,47 @@ p, li { font-family: 'Newsreader', serif; }
   color: var(--ink-soft) !important;
 }
 
-/* ---------------- Example chips ---------------- */
+/* ---------------- Example chips (HTML anchors) ---------------- */
 .tt-chip-label {
   font-family: 'JetBrains Mono', monospace;
   text-transform: uppercase;
   letter-spacing: 0.22em;
   font-size: 9.5px;
   color: var(--ink-faint);
-  margin: 16px 0 8px;
+  margin: 18px 0 10px;
 }
-.tt-chip-row-marker { display: none; }
-.tt-chip-row-marker + div [data-testid="stHorizontalBlock"] { gap: 10px !important; }
-.tt-chip-row-marker + div [data-testid="stHorizontalBlock"] [data-testid="stButton"] > button {
-  background: transparent !important;
-  border: 1px solid var(--ink) !important;
-  color: var(--ink) !important;
-  border-radius: 999px !important;
-  padding: 7px 16px !important;
-  font-family: 'Newsreader', serif !important;
-  font-size: 13px !important;
-  font-style: italic !important;
-  font-weight: 400 !important;
-  height: auto !important;
-  min-height: 0 !important;
-  width: auto !important;
-  white-space: nowrap !important;
+.tt-chip-row {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  margin-bottom: 4px;
+}
+.tt-chip {
+  display: inline-block;
+  background: transparent;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-family: 'Newsreader', serif;
+  font-size: 13.5px;
+  font-style: italic;
+  font-weight: 400;
+  text-decoration: none;
+  white-space: nowrap;
   transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
 }
-.tt-chip-row-marker + div [data-testid="stHorizontalBlock"] [data-testid="stButton"] > button:hover {
-  background: var(--ink) !important;
-  color: var(--paper) !important;
-  border-color: var(--ink) !important;
+.tt-chip:hover {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.tt-chip-eg-mark {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-style: normal;
+  color: var(--accent);
+  margin-right: 6px;
+  letter-spacing: 0.06em;
+  font-variant-numeric: lining-nums;
 }
 
 /* ---------------- Result list (magazine TOC feel) ---------------- */
@@ -302,14 +310,10 @@ p, li { font-family: 'Newsreader', serif; }
 }
 .tt-card-source a:hover { color: var(--accent); border-bottom-color: var(--accent); }
 
-/* In-card action row (Pin / Open) */
-.tt-card-actions { display: none; }
-.tt-card-actions + div [data-testid="stHorizontalBlock"] {
-  margin-top: -8px !important;
-  margin-bottom: 0 !important;
-  gap: 18px !important;
-}
-.tt-card-actions + div [data-testid="stHorizontalBlock"] [data-testid="stButton"] > button {
+/* In-card action buttons (Pin / Read full text). Style ALL main-area buttons
+   as small mono-uppercase text links — pin is the only non-anchor button in
+   the main area now that chips are HTML. */
+section.main [data-testid="stButton"] > button {
   background: transparent !important;
   border: none !important;
   color: var(--ink-soft) !important;
@@ -323,11 +327,18 @@ p, li { font-family: 'Newsreader', serif; }
   width: auto !important;
   text-align: left !important;
   font-weight: 500 !important;
+  box-shadow: none !important;
 }
-.tt-card-actions + div [data-testid="stHorizontalBlock"] [data-testid="stButton"] > button:hover {
+section.main [data-testid="stButton"] > button:hover {
   color: var(--accent) !important;
+  background: transparent !important;
 }
-.tt-card-actions + div [data-testid="stHorizontalBlock"] [data-testid="stExpander"] summary {
+section.main [data-testid="stButton"] > button:focus {
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+section.main [data-testid="stExpander"] summary {
   font-family: 'JetBrains Mono', monospace !important;
   font-size: 10px !important;
   letter-spacing: 0.18em !important;
@@ -337,12 +348,9 @@ p, li { font-family: 'Newsreader', serif; }
   background: transparent !important;
   border: none !important;
 }
-.tt-card-actions + div [data-testid="stHorizontalBlock"] [data-testid="stExpander"] summary:hover { color: var(--accent) !important; }
-.tt-card-actions + div [data-testid="stHorizontalBlock"] [data-testid="stExpander"] details {
-  background: transparent !important;
-  border: none !important;
-}
-.tt-card-actions + div [data-testid="stHorizontalBlock"] [data-testid="stExpander"] [data-testid="stExpanderDetails"] {
+section.main [data-testid="stExpander"] summary:hover { color: var(--accent) !important; }
+section.main [data-testid="stExpander"] details { background: transparent !important; border: none !important; }
+section.main [data-testid="stExpander"] [data-testid="stExpanderDetails"] {
   background: var(--paper-deep) !important;
   border: 1px solid var(--rule) !important;
   border-radius: var(--radius-card) !important;
@@ -663,8 +671,5 @@ hr { border-color: var(--rule) !important; }
 
 
 def inject() -> None:
-    """Inject CSS + fonts once per session."""
-    if st.session_state.get(_INJECTED_KEY):
-        return
+    """Inject CSS + fonts on every rerun (cheap; ensures live edits land)."""
     st.markdown(_CSS, unsafe_allow_html=True)
-    st.session_state[_INJECTED_KEY] = True

@@ -16,8 +16,8 @@ class RoutedResult(TypedDict):
 def _factor_slug_for(query: str) -> str | None:
     q = query.lower()
     for f in factor_search.list_factors():
-        if f["slug"] in q or f["label"].lower() in q:
-            return f["slug"]
+        if f["code"].lower() in q or f["label"].lower() in q:
+            return f["code"]
     return None
 
 

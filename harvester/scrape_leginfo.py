@@ -42,13 +42,10 @@ SECTION_NUMBER_RE = re.compile(r"^\d{1,6}(?:\.\d+)?\.$")
 
 @dataclass(slots=True)
 class StatuteRecord:
-    jurisdiction: str
-    code_name: str
-    section: str
+    section_number: str
     title: str | None
-    body: str
+    full_text: str
     source_url: str
-    effective_date: str | None = None
 
 
 class LegInfoClient:
@@ -211,13 +208,10 @@ def parse_article_page(html: str, source_url: str, default_code: str) -> list[St
     title = _extract_page_title(soup, default_code)
     return [
         StatuteRecord(
-            jurisdiction="CA",
-            code_name=code_name,
-            section=section,
+            section_number=section,
             title=title,
-            body=body,
+            full_text=body,
             source_url=source_url,
-            effective_date=effective_date,
         )
         for section, body, effective_date in sections
     ]
@@ -261,31 +255,42 @@ def get_all_article_urls(code: str) -> list[str]:
     return sorted(article_urls)
 
 
-def _save_records(records: list[StatuteRecord]) -> int:
+def _get_jurisdiction_id(jurisdiction_code: str) -> int:
+    with connect() as conn:
+        row = conn.execute(
+            "SELECT id FROM jurisdictions WHERE code = ?", (jurisdiction_code,)
+        ).fetchone()
+        if not row:
+            raise RuntimeError(
+                f"{jurisdiction_code} jurisdiction not found; run `python -m db.seed` first."
+            )
+        return int(row["id"])
+
+
+def _save_records(records: list[StatuteRecord], jurisdiction_id: int, jurisdiction_code: str) -> int:
     if not records:
         return 0
     with connect() as conn:
         conn.executemany(
             """
             INSERT OR REPLACE INTO statutes(
-                jurisdiction,
-                code_name,
-                section,
+                jurisdiction_id,
+                citation,
+                section_number,
                 title,
-                body,
+                full_text,
                 source_url,
-                effective_date
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                is_verified
+            ) VALUES (?, ?, ?, ?, ?, ?, 1)
             """,
             [
                 (
-                    record.jurisdiction,
-                    record.code_name,
-                    record.section,
+                    jurisdiction_id,
+                    f"{jurisdiction_code} Veh Code \u00a7{record.section_number}",
+                    record.section_number,
                     record.title,
-                    record.body,
+                    record.full_text,
                     record.source_url,
-                    record.effective_date,
                 )
                 for record in records
             ],
@@ -295,6 +300,7 @@ def _save_records(records: list[StatuteRecord]) -> int:
 
 
 def scrape_code(code: str = DEFAULT_CODE, limit: int = 0) -> int:
+    jurisdiction_id = _get_jurisdiction_id("CA")
     article_urls = get_all_article_urls(code)
     if limit > 0:
         article_urls = article_urls[:limit]
@@ -317,7 +323,7 @@ def scrape_code(code: str = DEFAULT_CODE, limit: int = 0) -> int:
             if not records:
                 print("  [skip] no sections found")
                 continue
-            stored += _save_records(records)
+            stored += _save_records(records, jurisdiction_id, "CA")
             print(f"  [ok] stored {len(records)} section(s)")
     print(f"Stored {stored} section(s) for {code}")
     return stored

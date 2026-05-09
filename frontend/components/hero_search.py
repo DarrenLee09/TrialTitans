@@ -1,14 +1,17 @@
 """Hero search row: input, jurisdiction, AI toggle, example chips."""
 from __future__ import annotations
 
+import html as _html
+from urllib.parse import quote
+
 import streamlit as st
 
 from db.seed import connect
 
 EXAMPLE_QUERIES = [
-    "CA Veh Code 22107",
-    "rear-ended at a stop sign",
-    "failure to yield at intersection",
+    ("01", "CA Veh Code 22107"),
+    ("02", "rear-ended at a stop sign"),
+    ("03", "failure to yield at intersection"),
 ]
 
 
@@ -19,13 +22,25 @@ def _jurisdictions() -> list[tuple[str, str]]:
         )]
 
 
+def _consume_chip_param() -> None:
+    """If the URL has ?q=..., apply it to the search box and clean the URL."""
+    q = st.query_params.get("q")
+    if q:
+        st.session_state["_chip_pending"] = q
+        try:
+            del st.query_params["q"]
+        except KeyError:
+            pass
+
+
 def render() -> tuple[str, str | None, bool]:
     """Render hero. Returns (query, jurisdiction_code_or_none, use_ai)."""
+    _consume_chip_param()
+
     if "_chip_pending" in st.session_state:
         st.session_state["query"] = st.session_state.pop("_chip_pending")
 
     st.markdown('<div class="tt-hero-label">Search the record</div>', unsafe_allow_html=True)
-    st.markdown('<div class="tt-hero-scope"></div>', unsafe_allow_html=True)
 
     cols = st.columns([5, 2, 1.4])
     with cols[0]:
@@ -50,13 +65,11 @@ def render() -> tuple[str, str | None, bool]:
             key="use_ai",
         )
 
+    chips_html = "".join(
+        f'<a class="tt-chip" href="?q={quote(eg)}"><span class="tt-chip-eg-mark">{num}</span>{_html.escape(eg)}</a>'
+        for num, eg in EXAMPLE_QUERIES
+    )
     st.markdown('<div class="tt-chip-label">Try one</div>', unsafe_allow_html=True)
-    st.markdown('<div class="tt-chip-row-marker"></div>', unsafe_allow_html=True)
-    chip_cols = st.columns([0.65, 0.95, 1.05, 5])
-    for i, eg in enumerate(EXAMPLE_QUERIES):
-        with chip_cols[i]:
-            if st.button(eg, key=f"chip-{i}"):
-                st.session_state["_chip_pending"] = eg
-                st.rerun()
+    st.markdown(f'<div class="tt-chip-row">{chips_html}</div>', unsafe_allow_html=True)
 
     return query, jurisdiction, use_ai

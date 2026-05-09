@@ -25,7 +25,7 @@ def _get_model() -> Any:
 
 def _rows_to_embed(rebuild: bool) -> list:
     sql = """
-        SELECT s.id, s.title, s.body
+        SELECT s.id, s.title, s.full_text
         FROM statutes s
     """
     if not rebuild:
@@ -40,7 +40,7 @@ def _rows_to_embed(rebuild: bool) -> list:
 
 def _text_for_embedding(row: dict) -> str:
     title = (row["title"] or "").strip()
-    body = (row["body"] or "")[:1000].strip()
+    body = (row["full_text"] or "")[:1000].strip()
     return f"{title}\n{body}".strip()
 
 

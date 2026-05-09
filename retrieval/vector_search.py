@@ -68,17 +68,18 @@ def _load_cache() -> EmbeddingCache:
             """
             SELECT
                 s.id,
-                s.jurisdiction,
-                s.code_name,
-                s.section,
+                j.code           AS jurisdiction,
+                j.statute_title  AS code_name,
+                s.section_number AS section,
                 s.title,
-                s.body,
+                s.full_text      AS body,
+                s.citation,
                 s.source_url,
-                s.effective_date,
                 se.embedding,
                 se.dims
             FROM statute_embeddings se
-            JOIN statutes s ON s.id = se.statute_id
+            JOIN statutes s      ON s.id = se.statute_id
+            JOIN jurisdictions j ON j.id = s.jurisdiction_id
             ORDER BY s.id
             """
         ).fetchall()
@@ -97,8 +98,8 @@ def _load_cache() -> EmbeddingCache:
                 "section": row["section"],
                 "title": row["title"],
                 "body": row["body"],
+                "citation": row["citation"],
                 "source_url": row["source_url"],
-                "effective_date": row["effective_date"],
                 "snippet": _build_snippet(row["body"]),
             }
         )
@@ -112,11 +113,12 @@ def has_embeddings(jurisdiction: str | None = None) -> bool:
     sql = """
         SELECT 1
         FROM statute_embeddings se
-        JOIN statutes s ON s.id = se.statute_id
+        JOIN statutes s      ON s.id = se.statute_id
+        JOIN jurisdictions j ON j.id = s.jurisdiction_id
     """
     args: list[str] = []
     if jurisdiction:
-        sql += " WHERE s.jurisdiction = ?"
+        sql += " WHERE j.code = ?"
         args.append(jurisdiction)
     sql += " LIMIT 1"
     with connect() as conn:

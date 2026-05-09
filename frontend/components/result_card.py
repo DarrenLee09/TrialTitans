@@ -23,7 +23,7 @@ def _factor_tags(s: dict) -> str:
 def _excerpt(s: dict) -> str:
     if s.get("snippet"):
         return s["snippet"]
-    body = s.get("body") or ""
+    body = s.get("body") or s.get("full_text") or ""
     return _html.escape(body[:420] + ("…" if len(body) > 420 else ""))
 
 
@@ -58,7 +58,6 @@ def render(statute: dict) -> None:
     pinned_ids = {p["id"] for p in st.session_state.get("case_pinned", [])}
     is_pinned = sid in pinned_ids
 
-    st.markdown('<div class="tt-card-actions"></div>', unsafe_allow_html=True)
     cols = st.columns([1.1, 1.6, 5])
     with cols[0]:
         label = "★ Pinned" if is_pinned else "+ Pin to file"
@@ -71,6 +70,7 @@ def render(statute: dict) -> None:
                 st.session_state.case_pinned.append(statute)
             st.rerun()
     with cols[1]:
-        if statute.get("body"):
+        body_text = statute.get("body") or statute.get("full_text")
+        if body_text:
             with st.expander("Read full text"):
-                st.markdown(statute["body"])
+                st.markdown(body_text)
