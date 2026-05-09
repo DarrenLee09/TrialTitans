@@ -14,12 +14,18 @@ def _citation(s: dict) -> str:
     return f"{s.get('jurisdiction', '?')} {s.get('code_name', '?')} § {s.get('section', '?')}"
 
 
+def _factor_label(f: object) -> str:
+    if isinstance(f, dict):
+        return f.get("label") or f.get("code") or ""
+    return str(f)
+
+
 def _factor_tags(s: dict) -> str:
     factors = s.get("factors") or []
     if not factors:
         return ""
     pills = "".join(
-        f'<span class="tt-tag">{_html.escape(str(f))}</span>' for f in factors[:4]
+        f'<span class="tt-tag">{_html.escape(_factor_label(f))}</span>' for f in factors[:4]
     )
     return f'<div class="tt-tags">{pills}</div>'
 
@@ -58,6 +64,11 @@ def render(statute: dict) -> None:
         if source_url else ""
     )
     live_html = _live_badge(statute)
+    explanation = (statute.get("explanation") or "").strip()
+    explanation_html = (
+        f'<div class="tt-card-rationale"><strong>Why this matters:</strong> {_html.escape(explanation)}</div>'
+        if explanation else ""
+    )
 
     card_html = (
         f'<div class="tt-card" id="statute-{sid}">'
@@ -68,6 +79,7 @@ def render(statute: dict) -> None:
         f'</div>'
         f'<h3 class="tt-card-title">{title}</h3>'
         f'<div class="tt-card-body">{excerpt}</div>'
+        f'{explanation_html}'
         f'{factors_html}'
         f'{source_html}'
         f'</div>'

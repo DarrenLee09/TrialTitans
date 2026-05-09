@@ -1,11 +1,35 @@
-"""Decide which retrieval path a user query should take."""
+"""Hybrid query router with live-fetch fallback.
+
+Three lanes:
+    1. Citation parse hits          → exact_lookup (kind="citation")
+       Cache miss falls through to live_fetch against the canonical source
+       (kind="live") so judges can query any section we didn't pre-scrape.
+    2. Everything else (NL queries) → query interpreter extracts
+       {jurisdictions, factors, intent}; we run factor_search +
+       FTS + vector_search in parallel and merge with reciprocal-rank
+       fusion (kind="hybrid").
+
+Vector search is a first-class participant in the merge, not a fallback for
+empty FTS results. RRF naturally weights statutes that appear in multiple
+lanes higher than singletons.
+"""
 from __future__ import annotations
 
-from typing import Literal, TypedDict
+import sqlite3
+from typing import Iterable, Literal, TypedDict
 
-from retrieval import citation_parser, exact_lookup, factor_search, fts_search, live_fetch, vector_search
+from ai.query_interpreter import interpret
+from retrieval import (
+    citation_parser,
+    exact_lookup,
+    factor_search,
+    fts_search,
+    live_fetch,
+    vector_search,
+)
 
-QueryKind = Literal["citation", "live", "factor", "fts", "semantic"]
+QueryKind = Literal["citation", "live", "hybrid"]
+RRF_K = 60
 
 
 class RoutedResult(TypedDict):
@@ -13,29 +37,22 @@ class RoutedResult(TypedDict):
     results: list[dict]
 
 
-def _factor_slug_for(query: str) -> str | None:
-    """Match a free-text query to a factor by overlapping word tokens.
+def rrf_merge(lists: Iterable[list[dict]], k: int = RRF_K) -> list[dict]:
+    """Reciprocal-rank fusion. score(id) = Σ over lists of 1 / (k + rank).
 
-    Substring matching ("dui" in "dui_dwi") only worked one direction and
-    missed short queries. Token overlap handles both: query "DUI" → factor
-    "DUI/DWI" matches via the shared "dui" token.
+    Dedupes by `id`. The first dict seen for a given id wins for the result
+    shape (so we keep the snippet/score from whichever lane saw it first).
     """
-    import re
-    STOP = {"a", "an", "the", "of", "and", "or", "to", "for", "in", "on",
-            "with", "from", "at", "by"}
-    q_tokens = {t for t in re.findall(r"[a-z0-9]+", query.lower())} - STOP
-    if not q_tokens:
-        return None
-    # Short query (e.g. "DUI") matches on a single shared token; longer
-    # natural-language phrases require ≥2 overlapping tokens so we don't
-    # latch onto incidental words ("stop sign" matching "Failure to Yield
-    # at a Yield Sign" via just "sign").
-    required = 1 if len(q_tokens) <= 2 else 2
-    for f in factor_search.list_factors():
-        label_tokens = {t for t in re.findall(r"[a-z0-9]+", f["label"].lower())} - STOP
-        if len(q_tokens & label_tokens) >= required:
-            return f["code"]
-    return None
+    scores: dict = {}
+    first_seen: dict = {}
+    for ranked in lists:
+        for rank, row in enumerate(ranked):
+            sid = row.get("id")
+            if sid is None:
+                continue
+            scores[sid] = scores.get(sid, 0.0) + 1.0 / (k + rank + 1)
+            first_seen.setdefault(sid, row)
+    return [first_seen[sid] for sid in sorted(scores, key=lambda s: -scores[s])]
 
 
 def route(query: str, jurisdiction: str | None = None, limit: int = 20) -> RoutedResult:
@@ -44,26 +61,32 @@ def route(query: str, jurisdiction: str | None = None, limit: int = 20) -> Route
         hit = exact_lookup.lookup(citation)
         if hit:
             return {"kind": "citation", "results": [hit]}
+        # Cache miss — try fetching the section live from its canonical source.
         live = live_fetch.fetch(citation.jurisdiction, citation.code_name, citation.section)
         if live:
             return {"kind": "live", "results": [live]}
         return {"kind": "citation", "results": []}
 
-    factor = _factor_slug_for(query)
-    if factor:
-        return {
-            "kind": "factor",
-            "results": factor_search.by_factor(factor, jurisdiction=jurisdiction, limit=limit),
-        }
+    parsed = interpret(query)
+    # Explicit user filter wins; otherwise use the first jurisdiction the interpreter
+    # extracted. (Multi-jurisdiction comparison is a future feature — today the
+    # search functions only accept a single code.)
+    jur_filter = jurisdiction or (parsed["jurisdictions"][0] if parsed["jurisdictions"] else None)
+    intent = parsed["intent"].strip() or query
 
-    fts_results = fts_search.search(query, jurisdiction=jurisdiction, limit=limit)
-    if fts_results:
-        return {"kind": "fts", "results": fts_results}
+    lists: list[list[dict]] = []
 
-    if vector_search.has_embeddings(jurisdiction=jurisdiction):
-        return {
-            "kind": "semantic",
-            "results": vector_search.search(query, jurisdiction=jurisdiction, limit=limit),
-        }
+    for code in parsed["factors"]:
+        lists.append(factor_search.by_factor(code, jurisdiction=jur_filter, limit=limit))
 
-    return {"kind": "fts", "results": []}
+    try:
+        lists.append(fts_search.search(intent, jurisdiction=jur_filter, limit=limit))
+    except sqlite3.OperationalError:
+        # FTS5 rejects some inputs (e.g. lone punctuation); treat as no contribution.
+        pass
+
+    if vector_search.has_embeddings(jurisdiction=jur_filter):
+        lists.append(vector_search.search(query, jurisdiction=jur_filter, limit=limit))
+
+    merged = rrf_merge(lists)[:limit]
+    return {"kind": "hybrid", "results": merged}

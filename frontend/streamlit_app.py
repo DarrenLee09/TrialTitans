@@ -52,7 +52,7 @@ def _run() -> None:
     routed = query_router.route(query, jurisdiction=jurisdiction or None, limit=20)
     results = routed["results"]
 
-    if use_ai and routed["kind"] == "fts" and results:
+    if use_ai and routed["kind"] in {"hybrid", "fts"} and results:
         results = reranker.rerank(query, results, top_k=8)
 
     skeleton_slot.empty()

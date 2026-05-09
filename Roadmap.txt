@@ -8,8 +8,9 @@
          (header columns: Statute, State, Universal Citation, Section #, Statute Language,
          Complete Statute, Contributing Factor).
   [ ] 2. Set ANTHROPIC_API_KEY in .env (no .env file present as of 2026-05-09 re-audit)
-  [ ] 3. Decide model: spec says claude-sonnet-4-20250514 but current code uses
-         claude-opus-4-7 — pick one and align ai/prompts.py + retrieval/reranker.py
+  [x] 3. Decide model & align — DONE: ai/answer_generator.py:17 and retrieval/reranker.py:12
+         both set MODEL = "claude-sonnet-4-6". Aligned (different from spec's
+         claude-sonnet-4-20250514 alias, but consistent across modules).
 
   Phase 1 — Schema alignment (~30 min) — 3/3 COMPLETE (re-audit 2026-05-09)
   [x] 4. Rewrite db/schema.sql to match spec — DONE (commit 90a1402): added citation,
@@ -32,18 +33,28 @@
          All three pass against the test fixture's tmp DB.
                                                                                             
   Phase 3 — Multi-state scraping (~90 min, parallel with Phase 4)
-  [ ] 9. Per-state adapters in harvester/scrape_statutes.py: CA (leginfo), FL (flsenate),
-         NY (nysenate REST API), TX (capitol)
+  [~] 9. Per-state adapters: CA (leginfo), FL, NY, TX — IN PROGRESS: harvester/
+         scrape_leginfo.py (340 lines) is a production-grade CA leginfo scraper with
+         TOC traversal, polite delays, and new-schema inserts. FL/NY/TX adapters NOT
+         written. Generic harvester/scrape_statutes.py still references old schema
+         columns (jurisdiction/code_name/body) — broken until updated or deleted.
   [ ] 10. Justia fallback module covering IL/GA/OH (one parser, three URL templates)
-  [ ] 11. harvester/validate_sources.py — HEAD every URL, set is_verified flag (don't
-          delete)
+          — TODO: no Justia module exists.
+  [~] 11. harvester/validate_sources.py — HEAD every URL, set is_verified flag — IN
+          PROGRESS: validate_sources.py:18-31 HEADs URLs and reports OK/failures, but
+          does NOT write is_verified back to the DB. One-line fix: UPDATE statutes SET
+          is_verified=1 WHERE id IN (...).
 
   Phase 4 — Claude tagging (~60 min)
   [ ] 12. JSON-mode classifier prompt in ai/prompts.py with all 17 factor codes
+          — TODO: ai/prompts.py only has the attorney-memo prompts.
   [ ] 13. Rewrite harvester/classify_factors.py: batch of 10, parse JSON, write
           confidence/tagged_by='claude', cache by statute id so restarts don't re-spend
           tokens
-  [ ] 14. Run on all ingested + scraped statutes
+          — TODO: classify_factors.py:7-32 is keyword matching (splits factor labels
+          into words and substring-matches statute text). Not Claude. Writes default
+          tagged_by='manual'.
+  [ ] 14. Run on all ingested + scraped statutes — blocked on items 12 + 13.
   [x] 15. Rebuild FTS index (harvester/build_fts_index.py is already good) — DONE
           2026-05-09: fixed external-content FTS5 bug (DELETE FROM → delete-all command),
           rebuild verified. Schema rewrite (Phase 1 item 4) replaced this with sync
@@ -52,38 +63,119 @@
           jurisdiction": the test code references the OLD schema. Rolls into Phase 5
           item 16 (update retrieval modules to new schema), not a Phase 4 regression.                      
                                                                                             
-  Phase 5 — Retrieval upgrade (~45 min)
-  [ ] 16. Update retrieval/exact_lookup.py and factor_search.py to new schema
-          (jurisdiction_id, return tags)
-  [ ] 17. Harden retrieval/citation_parser.py for §23152, CA 23152, Veh. Code §23152
-  [ ] 18. NEW ai/query_interpreter.py — NL → {jurisdictions, factors, intent}
-  [ ] 19. Update retrieval/query_router.py to call interpreter for NL queries
-  [ ] 20. Add attorney explanation in retrieval/reranker.py
+  Phase 5 — Retrieval upgrade (~60 min) — 8/8 COMPLETE (re-audit 2026-05-09)
+  Goal: hybrid retrieval over CA + multi-state corpus. Citation/factor lookups stay
+  exact; NL queries fan out to BOTH FTS (keyword precision) and vector search
+  (semantic recall) and merge the results. Vector search is a first-class part of
+  the product, not a fallback.
 
-  Phase 6 — Frontend rebuild (~90 min)
-  [ ] 21. Restructure frontend/ → app/ (or document the rename) and add app/main.py,
-          app/config.py
-  [ ] 22. Three-tab UI in search_bar.py: Citation / Factor / Natural Language
-  [ ] 23. Result card: factor badges, confidence score, expandable full text, source link
-  [ ] 24. Sidebar coverage panel: per-state statute count + % coverage
+  [x] 16. Update retrieval/exact_lookup.py + factor_search.py — DONE (commits ae6ca0e
+          + 1c90051). Both files migrated to new schema. Follow-up DONE 2026-05-09:
+          new retrieval/_tags.py::attach_factor_tags helper batch-joins
+          statute_factor_tags + contributing_factors and is called from exact_lookup,
+          factor_search, fts_search, vector_search. Result dicts now carry a `factors`
+          list of {code, label, confidence, tagged_by}. result_card renders the label.
+          Tests: tests/test_factor_tags.py (5 cases).
+  [x] 17. Harden retrieval/citation_parser.py — DONE 2026-05-09: layered match
+          (full → jur+section → code+section → bare-section). CA Vehicle Code defaults
+          for missing pieces. IL/GA/OH aliases added. Subsection markers parsed into a
+          separate Citation.subsection field; exact_lookup falls back to bare section
+          if exact subsection lookup misses. Bare-section guard uses fullmatch so
+          "23152 cases" doesn't eat search queries. Tests: 13 cases in
+          tests/test_citation_lookup.py (10 new).
+  [x] 18. NEW ai/query_interpreter.py — DONE 2026-05-09: interpret() extracts
+          {jurisdictions, factors, intent} from a free-text query. Two backends:
+          Claude (JSON mode) when ANTHROPIC_API_KEY set; deterministic offline
+          keyword-match fallback otherwise. Strips matched filters + leading/trailing
+          filler words from the intent. Audit follow-ups (same day): factor labels
+          like "DUI/DWI" and "Failure to Yield at a Yield Sign" are tokenized so
+          single-word queries ("DUI", "fleeing") still match; tokens used for
+          matching must be UNIQUE across labels (so "Driving" — present in 5+
+          labels — does not falsely trigger a factor). Tests:
+          tests/test_query_interpreter.py (13 cases, offline path).
+  [x] 19. Hybrid query routing in retrieval/query_router.py — DONE 2026-05-09:
+          rewritten as two-lane: citation lookups stay exact; everything else runs
+          interpreter → factor_search (per matched factor) + FTS (on intent) +
+          vector_search (on original query) in parallel → reciprocal-rank fusion
+          merge (k=60, dedupe by id). Returns kind="hybrid". streamlit_app updated
+          to fire reranker on "hybrid" kind. Tests: tests/test_query_router.py
+          (5 RRF cases + 3 routing cases).
+  [x] 20. Per-result attorney explanation in retrieval/reranker.py — DONE 2026-05-09:
+          single Claude call returns [{id, why}] JSON; _apply_order helper merges
+          ranking + rationale into result dicts as `explanation` field;
+          result_card.py renders "Why this matters" block above factor pills.
+          Offline mode is a clean no-op slice. Tests: tests/test_reranker.py
+          (8 cases — _apply_order shape, offline contract, edge cases).
+
+  Vector search workstream:
+  [x] 33. Schema: statute_embeddings table — DONE (commit ac7a188): schema.sql:107-114
+          stores BLOB embedding + model_name + dims, FK on delete cascade.
+  [x] 34. retrieval/vector_search.py — DONE (commit ac7a188): sentence-transformers
+          (all-MiniLM-L6-v2) cosine similarity, in-process embedding cache keyed on
+          (statute_count, max_id, embedding_count, max_embedding_id), per-jurisdiction
+          filtering. has_embeddings() probe used by router today. Audit follow-up
+          2026-05-09: hardened so that a missing sentence-transformers install
+          (or any model-load error) returns [] instead of raising — the router
+          silently drops the vector lane and the rest of hybrid retrieval keeps
+          working.
+  [x] 35. harvester/build_embeddings.py — DONE (commit ac7a188): batched encoder,
+          stores float32 BLOBs, --rebuild flag. NOT yet wired into the standard ingest
+          pipeline — must run manually after harvester/ingest_csv.py and any scrape.
+  [x] 36. Wire build_embeddings into the ingest flow — DONE 2026-05-09: README
+          setup section now lists `python -m harvester.build_embeddings` between
+          ingest_csv and the legacy FTS rebuild. db/seed.py main() prints a
+          "Next:" hint with the same commands so a fresh-clone user can't miss it.
+
+  Phase 6 — Frontend rebuild (~90 min) — 0/4 complete; Streamlit redesign shipped
+  but not against this roadmap's structure.
+  [ ] 21. Restructure frontend/ → app/ — NOT DONE (effectively skipped). frontend/
+          remains and works fine; consider closing this item or re-scoping.
+  [ ] 22. Three-tab UI Citation/Factor/NL — NOT DONE. components/hero_search.py:46-66
+          uses one search box + jurisdiction dropdown + AI toggle + 3 example chips.
+          Auto-routes via router; no explicit tabs.
+  [~] 23. Result card: factor badges, confidence, expandable, source link — IN PROGRESS:
+          components/result_card.py renders factor pills (line 17), source link (line 38),
+          and expandable full text (line 73). MISSING: confidence score; and the
+          `factors` field is read but never populated by retrieval — pills always empty.
+          Fix needs to happen alongside Phase 5 item 16's tag-join work.
+  [ ] 24. Sidebar coverage panel — NOT DONE. Sidebar shows pinned case file, not a
+          per-state coverage matrix.
 
   Phase 7 — Organizer extension (~60 min, scoring lever)
-  [ ] 25. Add cases + case_statutes tables (or session_state for v1)
-  [ ] 26. Workspace UI: save / tag (primary/supporting/background) / notes
-  [ ] 27. Gap detector: matrix of factors × states showing where coverage is missing
-  [ ] 28. Export workspace as CSV/Markdown
+  [x] 25. cases / case_statutes OR session_state — DONE via session_state:
+          streamlit_app.py:35-36 initializes st.session_state.case_pinned;
+          components/case_file_sidebar.py renders the pinned list.
+  [~] 26. Workspace UI: save / tag (primary/supporting/background) / notes — IN
+          PROGRESS: pin/unpin works (result_card.py:62-69, case_file_sidebar.py:61-65).
+          MISSING: tag-tier system (primary/supporting/background) and per-statute notes.
+  [ ] 27. Gap detector matrix of factors × states — NOT DONE.
+  [~] 28. Export workspace as CSV/Markdown — IN PROGRESS: Markdown export works
+          (case_file_sidebar.py:68-74). CSV export NOT implemented.
 
   Phase 8 — Polish & demo (~45 min)
-  [~] 29. Make all tests pass (pytest) — IN PROGRESS: re-audit 2026-05-09 the suite
-          is 6 passed / 3 failed. test_eval_coverage (3) all pass. The 3 failures
-          (test_factor_search ×2, test_fts_search ×1) are because retrieval-side test
-          code references the old schema columns — fixes belong with Phase 5 item 16.
-  [ ] 30. Run URL validator end-to-end, fix or flag failures
-  [ ] 31. Update README with setup + demo flow
+  [x] 29. Make all tests pass (pytest) — DONE 2026-05-09: 34/34 passing locally
+          (Python 3.9.6). Side-fix: removed `slots=True` from
+          retrieval/vector_search.py EmbeddingCache dataclass (3.10+ syntax that
+          was crashing module import on 3.9).
+  [ ] 30. Run URL validator end-to-end, fix or flag failures — blocked on Phase 3
+          item 11 (validator doesn't write is_verified yet).
+  [~] 31. Update README — IN PROGRESS: README.md (52 lines) covers setup + layout.
+          MISSING: demo flow walkthrough; architecture diagram still references old
+          schema field names (statutes / statute_relationships / statute_fts only).
   [ ] 32. Rehearse the 5-min demo (citation → factor → NL → organizer)
 
   ---
-  Legend: [x] done   [~] in progress   [ ] not started
+  Bonus work shipped (not on roadmap):
+  - harvester/scrape_leginfo.py (340 lines) — production CA leginfo scraper with
+    TOC traversal, polite delays, html→sections parser. Partially covers item 9.
+  - Frontend redesign (PR #1) — magazine-TOC card aesthetic, hero search row,
+    case-file sidebar, AI memo rail. New tests/test_frontend_smoke.py.
+  (The vector-search stack — build_embeddings.py + statute_embeddings + vector_search.py
+   — was previously listed here as bonus work but is now adopted into Phase 5 items
+   33-36 since it is a core product feature.)
+
+  ---
+  Legend: [x] done   [~] in progress   [ ] not started   [?] needs verification
   Session log 2026-05-09: project bootstrap (.venv + deps + db/seed) completed; FTS
   rebuild bug fixed; ingestion design approved (see docs/superpowers/specs/).
   Audit 2026-05-09: verified P1 (items 4,5,6) and P2 (items 7,8) against codebase —
@@ -93,7 +185,47 @@
   Re-audit 2026-05-09 (after commits 90a1402 + 6443454): P1 and P2 now ALL COMPLETE
   (5/5). Schema, jurisdictions, factor loader, ingest pipeline, and eval-coverage
   tests all verified. P0 item 1 restored to [x]. Remaining test failures (3) are
-  retrieval-side tests using old schema columns — work belongs to P5 item 16.                          
+  retrieval-side tests using old schema columns — work belongs to P5 item 16.
+  Full audit 2026-05-09 (after commits ac7a188 + 0e2943e + 1fa128d + 2c6d1cf):
+  scorecard 10 done / 6 in progress / 16 not done / 1 unverified. Phase 5 item 16
+  ✅ done. Phase 0 item 3 ✅ done (model aligned). Bonus work shipped: CA leginfo
+  scraper, vector embeddings + semantic search, frontend redesign. Cross-cutting
+  gap: retrieval result dicts don't carry factor tags, so result_card factor pills
+  always render empty — fold into P5 item 16 follow-up or P6 item 23.
+  Phase 5 reshape 2026-05-09: vector search promoted from bonus to core product.
+  Added items 33-36 (schema, retrieval module, embeddings builder, ingest wiring).
+  Item 19 reframed: hybrid FTS+vector merge, not vector-as-fallback. Phase 5 now
+  3/8 complete (16, 33, 34) with 33-35 already shipped via commit ac7a188.
+  Section A landed 2026-05-09: items 17 + 36 done; item 16 follow-up done
+  (factor-tag join). Test suite went from "unverified" to 34/34 passing. Side-fix
+  to vector_search.py EmbeddingCache for Py3.9 compat. Phase 5 now 5/8 complete.
+  Remaining: items 18 (query_interpreter), 19 (hybrid router), 20 (per-result
+  attorney explanation).
+  Sections B + C landed 2026-05-09: items 18, 19, 20 complete. ai/query_interpreter
+  + hybrid router + reranker explanations all wired and tested. Test suite now
+  59/59 passing. Phase 5: 8/8 COMPLETE.
+  Phase 5 end-to-end audit 2026-05-09 (against on-disk DB: 3,777 CA statutes,
+  6,837 factor tags, 3,777 embeddings):
+    • Citation/exact lookup ✓ (full, partial, bare, subsection-fallback all hit)
+    • FTS keyword search ✓
+    • Vector semantic search ✓ (after .venv pip install sentence-transformers)
+    • Factor-tag join populates result dicts in all four lanes ✓
+    • RRF merge promotes shared hits across FTS+vector ✓
+       (verified: query "drunk driving alcohol" — statute id 3552 in both
+        top-10 lists, lands at #1 in router output)
+    • Paraphrase queries work via vector lane: "ran through a stop sign" →
+      §21803/§22450/§21451; "talking on a cell phone while driving" →
+      §23123.5(a)/§23123(a); "driver fled the scene" → §20001(a).
+  Bug fixes from audit: (a) vector_search now degrades to [] when
+  sentence-transformers is missing; (b) interpreter tokenizes factor labels so
+  "DUI" matches "DUI/DWI"; (c) only UNIQUE label tokens trigger matching so
+  "drunk driving" doesn't falsely pick WIRELESS_TELEPHONE via shared "Driving"
+  token. Test suite: 63/63 passing.
+  Known data limitation (not a search bug): only CA has statutes — FL/TX/IL/GA/
+  NY/OH all return empty until Phase 3 scrapers land. Some queries like
+  "running a red light" rank suboptimally because §21453 lacks "running" in its
+  body and the embedding model doesn't strongly link the paraphrase; better
+  factor tagging via Phase 4 Claude classifier would fix this.                          
                                                                                             
   ---                                                                                       
   Critical-path order if you're solo: 1 → 4 → 7 → 12 → 13 → 16 → 22 → 27. Skip Phases 3     

@@ -232,16 +232,18 @@ def test_fts_handles_punctuation_in_user_query():
 # ---------- End-to-end query routing ----------
 
 def test_query_router_dispatches_correctly():
-    """The router picks the right kind for each query shape."""
+    """The router picks the right kind for each query shape.
+
+    Citation lookups go to the `citation` lane (or `live` on cache miss);
+    everything else flows through the hybrid RRF merge.
+    """
     from retrieval import query_router
-    cases = [
-        ("CA Veh Code 22107",          "citation"),
-        ("DUI",                        "factor"),
-        ("rear-ended at a stop sign",  "fts"),
-    ]
-    for q, expected in cases:
+    citation_kinds = {"citation", "live"}
+    r = query_router.route("CA Veh Code 22107", limit=3)
+    assert r["kind"] in citation_kinds, f"citation routed to {r['kind']}"
+    for q in ("DUI", "rear-ended at a stop sign"):
         r = query_router.route(q, limit=3)
-        assert r["kind"] == expected, f"{q!r} routed to {r['kind']}, expected {expected}"
+        assert r["kind"] == "hybrid", f"{q!r} routed to {r['kind']}, expected hybrid"
 
 
 # ---------- Schema documentation ----------

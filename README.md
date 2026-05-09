@@ -32,7 +32,8 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python -m db.seed                    # create db/legal_harvester.db
 python -m harvester.ingest_csv       # load data/eval-ca-vehicle-code.csv
-python -m harvester.build_fts_index  # build FTS5 index
+python -m harvester.build_embeddings # build vector embeddings (semantic search)
+python -m harvester.build_fts_index  # legacy FTS rebuild — schema triggers handle it now
 streamlit run frontend/streamlit_app.py
 ```
 

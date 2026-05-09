@@ -4,6 +4,7 @@ from __future__ import annotations
 import re
 
 from db.seed import connect
+from retrieval._tags import attach_factor_tags
 
 
 def _sanitize_fts_query(query: str) -> str:
@@ -46,4 +47,6 @@ def search(query: str, jurisdiction: str | None = None, limit: int = 20) -> list
     args.append(limit)
 
     with connect() as conn:
-        return [dict(r) for r in conn.execute(sql, args)]
+        rows = [dict(r) for r in conn.execute(sql, args)]
+        attach_factor_tags(conn, rows)
+        return rows
