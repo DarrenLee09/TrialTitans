@@ -6,7 +6,7 @@ from db.seed import connect
 
 def rebuild() -> int:
     with connect() as conn:
-        conn.execute("DELETE FROM statute_fts")
+        conn.execute("INSERT INTO statute_fts(statute_fts) VALUES('delete-all')")
         conn.execute(
             """
             INSERT INTO statute_fts(rowid, title, body, section, jurisdiction)
