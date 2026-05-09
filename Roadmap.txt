@@ -1,0 +1,106 @@
+
+
+
+                                            
+  ---                                                                                       
+  Phase 0 — Pre-reqs (blocks everything)
+  [x] 1. Drop eval-ca-vehicle-code.csv into data/ — DONE: 43 CA statute rows present
+         (header columns: Statute, State, Universal Citation, Section #, Statute Language,
+         Complete Statute, Contributing Factor).
+  [ ] 2. Set ANTHROPIC_API_KEY in .env (no .env file present as of 2026-05-09 re-audit)
+  [ ] 3. Decide model: spec says claude-sonnet-4-20250514 but current code uses
+         claude-opus-4-7 — pick one and align ai/prompts.py + retrieval/reranker.py
+
+  Phase 1 — Schema alignment (~30 min) — 3/3 COMPLETE (re-audit 2026-05-09)
+  [x] 4. Rewrite db/schema.sql to match spec — DONE (commit 90a1402): added citation,
+         is_verified; renamed factors → contributing_factors with code/description/
+         example_statutes; renamed join → statute_factor_tags with confidence/tagged_by/
+         tagged_at; added sources table; expanded statute_relationships with
+         relationship_type CHECK; added FTS5 sync triggers.
+  [x] 5. Re-seed jurisdictions for CA/FL/NY/TX/IL/GA/OH — DONE: data/jurisdictions.json
+         contains all 7 with statute_title + base_url.
+  [x] 6. Load factor codes from the eval CSV — DONE: db/seed.py:64 load_factors_from_csv()
+         auto-creates contributing_factors rows from CSV labels (UPPER_SNAKE_CASE codes).
+
+  Phase 2 — Ingest the eval floor (~45 min) — 2/2 COMPLETE (re-audit 2026-05-09)
+  [x] 7. Rewrite harvester/ingest_csv.py + insert CA statutes + tag rows — DONE
+         (commit 6443454): column-alias resolver, citation parser, jurisdiction lookup,
+         upsert into statutes, INSERT into statute_factor_tags with tagged_by='manual'.
+         CA leginfo URL builder strips subsection markers. Idempotent via ON CONFLICT.
+  [x] 8. tests/test_eval_coverage.py is real — DONE: three assertions — CSV non-empty,
+         every section present in DB, every statute with a factor in CSV has a tag.
+         All three pass against the test fixture's tmp DB.
+                                                                                            
+  Phase 3 — Multi-state scraping (~90 min, parallel with Phase 4)
+  [ ] 9. Per-state adapters in harvester/scrape_statutes.py: CA (leginfo), FL (flsenate),
+         NY (nysenate REST API), TX (capitol)
+  [ ] 10. Justia fallback module covering IL/GA/OH (one parser, three URL templates)
+  [ ] 11. harvester/validate_sources.py — HEAD every URL, set is_verified flag (don't
+          delete)
+
+  Phase 4 — Claude tagging (~60 min)
+  [ ] 12. JSON-mode classifier prompt in ai/prompts.py with all 17 factor codes
+  [ ] 13. Rewrite harvester/classify_factors.py: batch of 10, parse JSON, write
+          confidence/tagged_by='claude', cache by statute id so restarts don't re-spend
+          tokens
+  [ ] 14. Run on all ingested + scraped statutes
+  [x] 15. Rebuild FTS index (harvester/build_fts_index.py is already good) — DONE
+          2026-05-09: fixed external-content FTS5 bug (DELETE FROM → delete-all command),
+          rebuild verified. Schema rewrite (Phase 1 item 4) replaced this with sync
+          triggers in schema.sql:90-105 — manual rebuild path is now legacy.
+          ⚠ test_fts_search currently fails — but the failure is now "no column named
+          jurisdiction": the test code references the OLD schema. Rolls into Phase 5
+          item 16 (update retrieval modules to new schema), not a Phase 4 regression.                      
+                                                                                            
+  Phase 5 — Retrieval upgrade (~45 min)
+  [ ] 16. Update retrieval/exact_lookup.py and factor_search.py to new schema
+          (jurisdiction_id, return tags)
+  [ ] 17. Harden retrieval/citation_parser.py for §23152, CA 23152, Veh. Code §23152
+  [ ] 18. NEW ai/query_interpreter.py — NL → {jurisdictions, factors, intent}
+  [ ] 19. Update retrieval/query_router.py to call interpreter for NL queries
+  [ ] 20. Add attorney explanation in retrieval/reranker.py
+
+  Phase 6 — Frontend rebuild (~90 min)
+  [ ] 21. Restructure frontend/ → app/ (or document the rename) and add app/main.py,
+          app/config.py
+  [ ] 22. Three-tab UI in search_bar.py: Citation / Factor / Natural Language
+  [ ] 23. Result card: factor badges, confidence score, expandable full text, source link
+  [ ] 24. Sidebar coverage panel: per-state statute count + % coverage
+
+  Phase 7 — Organizer extension (~60 min, scoring lever)
+  [ ] 25. Add cases + case_statutes tables (or session_state for v1)
+  [ ] 26. Workspace UI: save / tag (primary/supporting/background) / notes
+  [ ] 27. Gap detector: matrix of factors × states showing where coverage is missing
+  [ ] 28. Export workspace as CSV/Markdown
+
+  Phase 8 — Polish & demo (~45 min)
+  [~] 29. Make all tests pass (pytest) — IN PROGRESS: re-audit 2026-05-09 the suite
+          is 6 passed / 3 failed. test_eval_coverage (3) all pass. The 3 failures
+          (test_factor_search ×2, test_fts_search ×1) are because retrieval-side test
+          code references the old schema columns — fixes belong with Phase 5 item 16.
+  [ ] 30. Run URL validator end-to-end, fix or flag failures
+  [ ] 31. Update README with setup + demo flow
+  [ ] 32. Rehearse the 5-min demo (citation → factor → NL → organizer)
+
+  ---
+  Legend: [x] done   [~] in progress   [ ] not started
+  Session log 2026-05-09: project bootstrap (.venv + deps + db/seed) completed; FTS
+  rebuild bug fixed; ingestion design approved (see docs/superpowers/specs/).
+  Audit 2026-05-09: verified P1 (items 4,5,6) and P2 (items 7,8) against codebase —
+  none complete. Items 6/7/8 downgraded from [~] to [ ] (spec written but no code).
+  Item 1 corrected from [x] to [ ] (CSV not in data/). FTS test regression noted on
+  item 15. Test suite drift recorded on item 29.
+  Re-audit 2026-05-09 (after commits 90a1402 + 6443454): P1 and P2 now ALL COMPLETE
+  (5/5). Schema, jurisdictions, factor loader, ingest pipeline, and eval-coverage
+  tests all verified. P0 item 1 restored to [x]. Remaining test failures (3) are
+  retrieval-side tests using old schema columns — work belongs to P5 item 16.                          
+                                                                                            
+  ---                                                                                       
+  Critical-path order if you're solo: 1 → 4 → 7 → 12 → 13 → 16 → 22 → 27. Skip Phases 3     
+  (extra states), 4 (Claude tagging), and 7 (organizer) at your peril — they're where the   
+  points are.                                                                            
+                                                                                            
+  Schema rewrite is the biggest risk — it invalidates the seeded DB and every retrieval
+  module that uses jurisdiction text vs jurisdiction_id. Do it before anything else, then   
+  everything downstream uses the right shape.
+
