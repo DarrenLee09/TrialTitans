@@ -39,6 +39,28 @@ MODES = [
     ("case_file", "Build case file"),
 ]
 
+# Loose keyword → jurisdiction code map. Lets the user type "DUI in Georgia"
+# without picking a state from the dropdown — we auto-set the dropdown to
+# what we detected so the choice is visible.
+_JURISDICTION_KEYWORDS = [
+    (r"\b(georgia|ga\.|ga\b)", "GA"),
+    (r"\b(ohio|oh\.|oh\b)", "OH"),
+    (r"\b(florida|fla\.?|fl\b)", "FL"),
+    (r"\b(california|cal\.?|calif\.?|ca\b)", "CA"),
+    (r"\b(new\s+york|ny\b|n\.y\.)", "NY"),
+    (r"\b(texas|tex\.?|tx\b)", "TX"),
+    (r"\b(illinois|ill\.?|il\b)", "IL"),
+]
+
+
+def _detect_jurisdiction(query: str) -> str | None:
+    import re
+    q = (query or "").lower()
+    for pattern, code in _JURISDICTION_KEYWORDS:
+        if re.search(pattern, q):
+            return code
+    return None
+
 
 def render() -> tuple[str, str | None, bool, str]:
     """Render hero. Returns (query, jurisdiction_code_or_none, use_ai, mode)."""
@@ -81,10 +103,28 @@ def render() -> tuple[str, str | None, bool, str]:
         )
     with cols[1]:
         juris_options = [("", "Any jurisdiction")] + _jurisdictions()
+        labels = [name for _, name in juris_options]
+
+        # Auto-detect a jurisdiction in the query and pre-set the dropdown.
+        # Tracks `_juris_auto` so we only auto-update when the user hasn't
+        # explicitly chosen something different.
+        detected = _detect_jurisdiction(st.session_state.get("query", ""))
+        last_auto = st.session_state.get("_juris_auto")
+        current = st.session_state.get("juris_select")
+        if detected:
+            detected_label = next(
+                (name for code, name in juris_options if code == detected),
+                "Any jurisdiction",
+            )
+            if current in (None, "Any jurisdiction", last_auto):
+                st.session_state["juris_select"] = detected_label
+                st.session_state["_juris_auto"] = detected_label
+
         jur_label = st.selectbox(
             "Jurisdiction",
-            [name for _, name in juris_options],
+            labels,
             label_visibility="collapsed",
+            key="juris_select",
         )
         jurisdiction = next((code for code, name in juris_options if name == jur_label), "") or None
 

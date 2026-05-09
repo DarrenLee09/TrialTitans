@@ -89,4 +89,16 @@ def route(query: str, jurisdiction: str | None = None, limit: int = 20) -> Route
         lists.append(vector_search.search(query, jurisdiction=jur_filter, limit=limit))
 
     merged = rrf_merge(lists)[:limit]
-    return {"kind": "hybrid", "results": merged}
+    if merged:
+        return {"kind": "hybrid", "results": merged}
+
+    # Cache miss + a jurisdiction we don't pre-index → ask Claude which sections
+    # are likely on point and live-fetch each from its canonical source.
+    if jur_filter in {"GA", "OH"}:
+        # 3 suggestions keeps the Claude prompt + parallel fetches cheap
+        # while still surfacing the top-on-point sections.
+        suggestions = live_fetch.suggest_and_fetch(query, jur_filter, limit=3)
+        if suggestions:
+            return {"kind": "live", "results": suggestions}
+
+    return {"kind": "hybrid", "results": []}
