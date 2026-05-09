@@ -7,12 +7,18 @@ from __future__ import annotations
 
 import argparse
 import csv
+import re
 from pathlib import Path
 
 from db.seed import connect
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CSV = ROOT / "data" / "eval-ca-vehicle-code.csv"
+
+
+def slugify(label: str) -> str:
+    """lowercase → replace non-alnum runs with `_` → strip leading/trailing `_`."""
+    return re.sub(r"[^a-z0-9]+", "_", label.lower()).strip("_")
 
 
 def ingest(csv_path: Path = DEFAULT_CSV) -> int:
